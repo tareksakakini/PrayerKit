@@ -35,16 +35,15 @@ struct NextPrayerComplicationView: View {
         return (next.name.rawValue, "in \(timeUntil)")
     }
     
-    /// Progress (0–1) from previous prayer to next prayer for corner gauge
-    private func cornerGaugeProgress(prayers: DailyPrayers, nextPrayer: Prayer) -> Double {
-        let now = DateProvider.now()
+    /// Progress (0–1) from previous prayer to next prayer for corner gauge (uses entry date for seamless updates)
+    private func cornerGaugeProgress(prayers: DailyPrayers, nextPrayer: Prayer, asOf date: Date) -> Double {
         guard let nextIndex = prayers.prayers.firstIndex(where: { $0.name == nextPrayer.name }),
               nextIndex > 0 else {
             return 0.5 // First prayer of day: show halfway
         }
         let prev = prayers.prayers[nextIndex - 1]
         let total = nextPrayer.time.timeIntervalSince(prev.time)
-        let elapsed = now.timeIntervalSince(prev.time)
+        let elapsed = date.timeIntervalSince(prev.time)
         guard total > 0 else { return 1 }
         return min(max(elapsed / total, 0), 1)
     }
@@ -85,7 +84,7 @@ struct NextPrayerComplicationView: View {
 
         case .accessoryCorner:
             if let next = entry.nextPrayer, entry.timeUntil != nil, let prayers = entry.prayers {
-                let progress = cornerGaugeProgress(prayers: prayers, nextPrayer: next)
+                let progress = cornerGaugeProgress(prayers: prayers, nextPrayer: next, asOf: entry.date)
                 Gauge(value: progress, in: 0...1) {
                     Image(systemName: next.name.icon)
                 } currentValueLabel: {
