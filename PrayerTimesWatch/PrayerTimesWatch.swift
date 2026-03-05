@@ -60,27 +60,39 @@ struct NextPrayerComplicationView: View {
                 Text(display.detail)
                     .foregroundColor(.secondary)
             }
-            .widgetLabel(display.detail)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .allowsTightening(true)
+            .widgetLabel("\(display.title) \(display.detail)")
 
         case .accessoryCircular:
             ZStack {
                 AccessoryWidgetBackground()
-                Text(oneLineStatus)
-                    .font(.system(size: 8, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.25)
-                    .allowsTightening(true)
+                VStack(spacing: 1) {
+                    Text(display.title)
+                        .font(.system(size: 9, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .allowsTightening(true)
+                    Text(display.detail)
+                        .font(.system(size: 7, weight: .regular))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .allowsTightening(true)
+                }
+                .multilineTextAlignment(.center)
             }
             .widgetLabel {
-                Text(oneLineStatus)
+                Text("\(display.title) \(display.detail)")
             }
 
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(display.title) \(display.detail)")
-                    .font(.system(size: 12, weight: .semibold))
-                Text(entry.hijriDate)
-                    .font(.system(size: 9))
+                Text(display.title)
+                    .font(.system(size: 14, weight: .semibold))
+                Text(display.detail)
+                    .font(.system(size: 11, weight: .regular))
                     .foregroundColor(.secondary)
             }
             .widgetLabel("\(display.title) \(display.detail)")
