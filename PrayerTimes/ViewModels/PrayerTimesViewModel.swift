@@ -12,6 +12,7 @@ import Combine
 class PrayerTimesViewModel: ObservableObject {
     @Published var dailyPrayers: DailyPrayers?
     @Published var isLoading: Bool = true
+    @Published private(set) var countdownTick: Date = Date()
     @Published var calculationMethod: CalculationMethod = .northAmerica {
         didSet {
             saveCalculationMethod()
@@ -31,6 +32,7 @@ class PrayerTimesViewModel: ObservableObject {
     
     private var locationManager: LocationManager
     private var cancellables = Set<AnyCancellable>()
+    private var countdownTimer: Timer?
     
     private let calculationMethodKey = "calculationMethod"
     private let asrMethodKey = "asrMethod"
@@ -39,6 +41,48 @@ class PrayerTimesViewModel: ObservableObject {
         self.locationManager = locationManager
         loadPreferences()
         setupBindings()
+        startCountdownTimer()
+    }
+    
+    deinit {
+        countdownTimer?.invalidate()
+    }
+    
+    private func startCountdownTimer() {
+        scheduleCountdownTick(atNextMinuteBoundary: true)
+    }
+    
+    private func scheduleCountdownTick(atNextMinuteBoundary: Bool) {
+        countdownTimer?.invalidate()
+        
+        let now = DateProvider.now()
+        let calendar = Calendar.current
+        
+        let interval: TimeInterval
+        if atNextMinuteBoundary,
+           let startOfNextMinute = calendar.date(bySetting: .second, value: 0, of: now)?.addingTimeInterval(60) {
+            let secondsUntilNextMinute = startOfNextMinute.timeIntervalSince(now)
+            interval = max(0.1, min(secondsUntilNextMinute, 60))
+        } else {
+            interval = 60
+        }
+        
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.countdownTick = Date()
+                // Recalculate when we've passed all prayers (e.g. after Isha) to show tomorrow's Fajr
+                if self.dailyPrayers != nil && self.dailyPrayers?.nextPrayer == nil,
+                   let location = self.locationManager.location,
+                   let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: DateProvider.now()) {
+                    self.calculatePrayerTimes(for: location, date: tomorrow)
+                }
+                // Re-sync to next minute boundary to stay aligned with the clock
+                self.scheduleCountdownTick(atNextMinuteBoundary: true)
+            }
+        }
+        countdownTimer?.tolerance = 0.5
+        RunLoop.main.add(countdownTimer!, forMode: .common)
     }
     
     private func loadPreferences() {
@@ -80,7 +124,7 @@ class PrayerTimesViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
-    func calculatePrayerTimes(for coordinate: CLLocationCoordinate2D) {
+    func calculatePrayerTimes(for coordinate: CLLocationCoordinate2D, date: Date? = nil) {
         isLoading = true
         
         let calculator = PrayerTimeCalculator(
@@ -88,7 +132,8 @@ class PrayerTimesViewModel: ObservableObject {
             asrMethod: asrMethod
         )
         
-        let prayers = calculator.calculatePrayerTimes(for: DateProvider.now(), at: coordinate)
+        let targetDate = date ?? DateProvider.now()
+        let prayers = calculator.calculatePrayerTimes(for: targetDate, at: coordinate)
         
         DispatchQueue.main.async {
             self.dailyPrayers = prayers
@@ -104,6 +149,17 @@ class PrayerTimesViewModel: ObservableObject {
     func recalculatePrayerTimes() {
         guard let location = locationManager.location else { return }
         calculatePrayerTimes(for: location)
+    }
+    
+    func refreshCountdown() {
+        countdownTick = Date()
+        if dailyPrayers != nil && dailyPrayers?.nextPrayer == nil,
+           let location = locationManager.location,
+           let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: DateProvider.now()) {
+            calculatePrayerTimes(for: location, date: tomorrow)
+        }
+        // Re-sync timer to clock when app becomes active (e.g. returning from background)
+        scheduleCountdownTick(atNextMinuteBoundary: true)
     }
     
     func timeUntilNextPrayer() -> String? {

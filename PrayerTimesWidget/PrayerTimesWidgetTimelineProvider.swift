@@ -48,32 +48,29 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         WatchConnectivityReceiver.shared.activate()
         #endif
         let currentDate = DateProvider.now()
-        let entry = createEntry(for: currentDate)
+        let calendar = Calendar.current
         
-        var nextUpdateDate: Date
+        // Create an entry for each minute boundary so the countdown updates in sync with the clock
+        var entries: [PrayerTimesEntry] = []
+        let maxEntries = 100
+        var entryDate = startOfMinute(for: currentDate, calendar: calendar)
         
-        if let nextPrayer = entry.nextPrayer {
-            nextUpdateDate = nextPrayer.time.addingTimeInterval(60)
-        } else {
-            let calendar = Calendar.current
-            if let tomorrow = calendar.date(byAdding: .day, value: 1, to: currentDate) {
-                nextUpdateDate = calendar.startOfDay(for: tomorrow)
-            } else {
-                nextUpdateDate = currentDate.addingTimeInterval(3600)
-            }
+        for _ in 0..<maxEntries {
+            let entry = createEntry(for: entryDate)
+            entries.append(entry)
+            // Move to next minute boundary
+            guard let nextMinute = calendar.date(byAdding: .minute, value: 1, to: entryDate) else { break }
+            entryDate = nextMinute
         }
         
-        let minimumUpdate = currentDate.addingTimeInterval(900)
-        if nextUpdateDate < minimumUpdate {
-            nextUpdateDate = minimumUpdate
-        }
-        
-        if entry.prayers == nil {
-            nextUpdateDate = currentDate.addingTimeInterval(300)
-        }
-        
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdateDate))
+        // Request next timeline refresh after our last entry
+        let nextUpdateDate = entryDate
+        let timeline = Timeline(entries: entries, policy: .after(nextUpdateDate))
         completion(timeline)
+    }
+    
+    private func startOfMinute(for date: Date, calendar: Calendar) -> Date {
+        calendar.date(bySetting: .second, value: 0, of: date) ?? date
     }
     
     private func createEntry(for date: Date) -> PrayerTimesEntry {
@@ -101,8 +98,20 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
             }
         }
         
-        let nextPrayer = dailyPrayers?.nextPrayer
-        let timeUntil = calculateTimeUntil(nextPrayer: nextPrayer)
+        var nextPrayer = nextPrayerRelative(to: date, prayers: dailyPrayers?.prayers)
+        // After last prayer (e.g. Isha), use tomorrow's prayers
+        if nextPrayer == nil, let location = location, let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
+            let calculationMethod = sharedData.loadCalculationMethod()
+            let asrMethod = sharedData.loadAsrMethod()
+            let calculator = PrayerTimeCalculator(
+                calculationMethod: calculationMethod,
+                asrMethod: asrMethod
+            )
+            let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location)
+            dailyPrayers = tomorrowPrayers
+            nextPrayer = nextPrayerRelative(to: date, prayers: tomorrowPrayers.prayers)
+        }
+        let timeUntil = calculateTimeUntil(nextPrayer: nextPrayer, asOf: date)
         
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "EEEE, MMMM d"
@@ -125,11 +134,15 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         )
     }
     
-    private func calculateTimeUntil(nextPrayer: Prayer?) -> String? {
+    private func nextPrayerRelative(to date: Date, prayers: [Prayer]?) -> Prayer? {
+        guard let prayers = prayers else { return nil }
+        return prayers.first { $0.time > date }
+    }
+    
+    private func calculateTimeUntil(nextPrayer: Prayer?, asOf date: Date) -> String? {
         guard let nextPrayer = nextPrayer else { return nil }
         
-        let now = DateProvider.now()
-        let difference = nextPrayer.time.timeIntervalSince(now)
+        let difference = nextPrayer.time.timeIntervalSince(date)
         
         if difference <= 0 {
             return nil

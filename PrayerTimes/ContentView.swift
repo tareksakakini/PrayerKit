@@ -12,6 +12,7 @@ struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
     @StateObject private var viewModel: PrayerTimesViewModel
     @State private var showSettings = false
+    @Environment(\.scenePhase) private var scenePhase
     
     init() {
         let locManager = LocationManager()
@@ -82,6 +83,11 @@ struct ContentView: View {
         }
         .onAppear {
             locationManager.requestLocationPermission()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                viewModel.refreshCountdown()
+            }
         }
     }
     
