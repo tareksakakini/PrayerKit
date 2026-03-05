@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct PrayerTimesApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+    
     init() {
         WatchConnectivityManager.shared.activate()
     }
@@ -17,6 +19,11 @@ struct PrayerTimesApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                WatchConnectivityManager.shared.syncToWatch()
+            }
         }
     }
 }

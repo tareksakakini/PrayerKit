@@ -56,10 +56,14 @@ final class WatchConnectivityManager: NSObject {
         
         guard !userInfo.isEmpty else { return }
         
+        // transferUserInfo: guaranteed delivery, queued if Watch is asleep
         session.transferUserInfo(userInfo)
         
-        // Also update application context for immediate state sync when Watch wakes
+        // updateApplicationContext: immediate state when Watch wakes (replaces previous)
         try? session.updateApplicationContext(userInfo)
+        
+        // transferCurrentComplicationUserInfo: high priority for complication updates
+        session.transferCurrentComplicationUserInfo(userInfo)
     }
 }
 

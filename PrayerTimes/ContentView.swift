@@ -33,7 +33,7 @@ struct ContentView: View {
                     if let error = locationManager.locationError {
                         VStack(spacing: 12) {
                             HStack {
-                                Image(systemName: "location.fill.badge.exclamationmark")
+                                Image(systemName: "location.slash.fill")
                                     .foregroundColor(.orange)
                                 Text(error)
                                     .font(.system(size: 13, weight: .medium, design: .rounded))

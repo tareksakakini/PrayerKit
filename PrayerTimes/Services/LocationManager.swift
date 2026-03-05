@@ -88,6 +88,8 @@ extension LocationManager: CLLocationManagerDelegate {
             
             // Save to shared storage for widget
             SharedDataManager.shared.saveLocation(location.coordinate)
+            // Sync to Watch (ViewModel will recalculate prayers; this pushes location immediately)
+            WatchConnectivityManager.shared.syncToWatch()
             
             // Debug: Print coordinates
             print("Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
