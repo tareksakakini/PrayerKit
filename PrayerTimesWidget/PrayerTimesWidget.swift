@@ -1,0 +1,110 @@
+//
+//  PrayerTimesWidget.swift
+//  PrayerTimesWidget
+//
+//  Created by Tarek Sakakini on 11/24/25.
+//
+
+import WidgetKit
+import SwiftUI
+
+struct PrayerTimesWidget: Widget {
+    let kind: String = "PrayerTimesWidget"
+    
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: PrayerTimesTimelineProvider()) { entry in
+            PrayerTimesWidgetEntryView(entry: entry)
+                .containerBackground(for: .widget) {
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.07, green: 0.13, blue: 0.26),
+                            Color(red: 0.12, green: 0.22, blue: 0.35)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+                .widgetURL(URL(string: "prayertimes://"))
+        }
+        .configurationDisplayName("Prayer Times")
+        .description("View today's prayer times at a glance.")
+        .supportedFamilies([.systemMedium])
+    }
+}
+
+struct PrayerTimesWidgetEntryView: View {
+    var entry: PrayerTimesEntry
+    
+    private let gold = Color(red: 0.85, green: 0.75, blue: 0.55)
+    
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm"
+        return f
+    }()
+    
+    private static let periodFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "a"
+        return f
+    }()
+    
+    var body: some View {
+        Group {
+            if let prayers = entry.prayers {
+                HStack(spacing: 0) {
+                    ForEach(prayers.prayers) { prayer in
+                        let isNext = entry.nextPrayer?.name == prayer.name
+                        
+                        VStack(spacing: 4) {
+                            Image(systemName: prayer.name.icon)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(isNext ? gold : .white.opacity(0.5))
+                            
+                            Text(prayer.name.rawValue)
+                                .font(.system(size: 10, weight: isNext ? .bold : .medium, design: .rounded))
+                                .foregroundColor(isNext ? .white : .white.opacity(0.6))
+                            
+                            Text(Self.timeFormatter.string(from: prayer.time))
+                                .font(.system(size: 14, weight: isNext ? .bold : .semibold, design: .rounded))
+                                .foregroundColor(isNext ? gold : .white)
+                            
+                            Text(Self.periodFormatter.string(from: prayer.time))
+                                .font(.system(size: 9, weight: .medium, design: .rounded))
+                                .foregroundColor(isNext ? gold.opacity(0.8) : .white.opacity(0.5))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(isNext ? Color.white.opacity(0.1) : Color.clear)
+                        )
+                    }
+                }
+                .padding(.horizontal, 4)
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "location.slash.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(gold)
+                    Text("Open app to set location")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+        }
+    }
+}
+
+#Preview(as: .systemMedium) {
+    PrayerTimesWidget()
+} timeline: {
+    PrayerTimesEntry(
+        date: Date(),
+        prayers: nil,
+        nextPrayer: nil,
+        timeUntil: nil,
+        cityName: "San Francisco",
+        dateString: "Monday, November 24"
+    )
+}
