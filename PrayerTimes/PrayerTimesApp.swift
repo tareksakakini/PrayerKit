@@ -10,17 +10,7 @@ import SwiftUI
 @main
 struct PrayerTimesApp: App {
     init() {
-        #if DEBUG
-        // Override \"now\" for debugging at 10:00 AM local time
-        DateProvider.now = {
-            let calendar = Calendar.current
-            var components = calendar.dateComponents([.year, .month, .day], from: Date())
-            components.hour = 10
-            components.minute = 0
-            components.second = 0
-            return calendar.date(from: components) ?? Date()
-        }
-        #endif
+        WatchConnectivityManager.shared.activate()
     }
     
     var body: some Scene {

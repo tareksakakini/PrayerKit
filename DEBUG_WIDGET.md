@@ -78,3 +78,45 @@ print("Prayer times saved: \(shared.loadPrayerTimes() != nil)")
 - Removing and re-adding the widget
 - Or wait for the next prayer time (widget updates automatically)
 
+---
+
+## Watch App & Complication
+
+**Important**: The Watch runs on a separate device. It cannot access the iPhone's App Group. Data syncs via **WatchConnectivity** when both devices are paired.
+
+### Testing Order (Must Run on Physical Devices)
+
+1. **Run the main PrayerTimes app on your iPhone**
+   - Allow location permission
+   - Wait for prayer times to load (you should see Fajr, Dhuhr, etc.)
+   - This sends data to the Watch via WatchConnectivity
+
+2. **Open the Prayer Times Watch app on your Apple Watch**
+   - This activates the WatchConnectivity session
+   - Data should sync from the iPhone
+   - You should see prayer times instead of "Open iPhone app"
+
+3. **Add the complication to your watch face**
+   - Long press on watch face → Edit → Add complication
+   - Choose "Next Prayer" under Prayer Times
+   - It should show "Fajr in Xh Xm" (or the next prayer)
+
+### Simulator vs Physical Device
+
+- **WatchConnectivity does NOT work in the simulator** – iPhone and Watch simulators cannot communicate
+- You must use a **paired physical iPhone + Apple Watch** for testing
+- The Watch app and complication will show "Open app" / "No upcoming" in the simulator
+
+### If Watch still shows "Open app" or "Hello World"
+
+1. Ensure iPhone and Watch are paired and unlocked
+2. Run the main app on iPhone first, wait for it to load
+3. Open the Watch app once – this triggers the sync
+4. Force close and reopen the Watch app
+5. Rebuild and reinstall the Watch app from Xcode
+
+### Two Different Things
+
+- **Watch App** = The app you tap to open on the Watch (shows full prayer list)
+- **Watch Complication** = The small widget on the watch face (shows next prayer only)
+

@@ -96,6 +96,8 @@ class PrayerTimesViewModel: ObservableObject {
             
             // Save to shared storage for widget
             SharedDataManager.shared.savePrayerTimes(prayers)
+            // Sync to Watch (runs on separate device, cannot access iPhone App Group)
+            WatchConnectivityManager.shared.syncToWatch()
         }
     }
     

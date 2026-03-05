@@ -97,7 +97,11 @@ extension LocationManager: CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         DispatchQueue.main.async {
-            self.locationError = error.localizedDescription
+            if let clError = error as? CLError, clError.code == .denied {
+                self.locationError = "Location access denied. Please enable in Settings."
+            } else {
+                self.locationError = error.localizedDescription
+            }
             print("Location error: \(error.localizedDescription)")
         }
     }

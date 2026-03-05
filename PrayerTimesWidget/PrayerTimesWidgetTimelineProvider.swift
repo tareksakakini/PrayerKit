@@ -36,11 +36,17 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
     }
     
     func getSnapshot(in context: Context, completion: @escaping (PrayerTimesEntry) -> Void) {
+        #if os(watchOS)
+        WatchConnectivityReceiver.shared.activate()
+        #endif
         let entry = createEntry(for: DateProvider.now())
         completion(entry)
     }
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerTimesEntry>) -> Void) {
+        #if os(watchOS)
+        WatchConnectivityReceiver.shared.activate()
+        #endif
         let currentDate = DateProvider.now()
         let entry = createEntry(for: currentDate)
         

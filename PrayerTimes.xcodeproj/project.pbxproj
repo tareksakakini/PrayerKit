@@ -10,6 +10,10 @@
 		E65A82262ED593F400194B3D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E65A82252ED593F400194B3D /* WidgetKit.framework */; };
 		E65A82282ED593F400194B3D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E65A82272ED593F400194B3D /* SwiftUI.framework */; };
 		E65A82372ED593F700194B3D /* PrayerTimesWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E65A82232ED593F400194B3D /* PrayerTimesWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E6D6E1712F596F3B00CF2C15 /* PrayerTimesWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E6D6E1672F596F3900CF2C15 /* PrayerTimesWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E6D6E17B2F596FE800CF2C15 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E65A82252ED593F400194B3D /* WidgetKit.framework */; };
+		E6D6E17C2F596FE800CF2C15 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E65A82272ED593F400194B3D /* SwiftUI.framework */; };
+		E6D6E1892F596FE900CF2C15 /* PrayerTimesWatchExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E6D6E17A2F596FE800CF2C15 /* PrayerTimesWatchExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -19,6 +23,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = E65A82222ED593F400194B3D;
 			remoteInfo = PrayerTimesWidgetExtension;
+		};
+		E6D6E16F2F596F3B00CF2C15 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E65A80E62ED58C1A00194B3D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E6D6E1662F596F3900CF2C15;
+			remoteInfo = "PrayerTimesWatch Watch App";
+		};
+		E6D6E1872F596FE900CF2C15 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E65A80E62ED58C1A00194B3D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E6D6E1792F596FE800CF2C15;
+			remoteInfo = PrayerTimesWatchExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -34,6 +52,28 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E6D6E1722F596F3B00CF2C15 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				E6D6E1712F596F3B00CF2C15 /* PrayerTimesWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6D6E18E2F596FE900CF2C15 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E6D6E1892F596FE900CF2C15 /* PrayerTimesWatchExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +82,9 @@
 		E65A82252ED593F400194B3D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		E65A82272ED593F400194B3D /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		E65A82442ED6290D00194B3D /* PrayerTimesWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PrayerTimesWidgetExtension.entitlements; sourceTree = "<group>"; };
+		E6D6E1672F596F3900CF2C15 /* PrayerTimesWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "PrayerTimesWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E6D6E17A2F596FE800CF2C15 /* PrayerTimesWatchExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrayerTimesWatchExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E6D6E1902F5970A100CF2C15 /* PrayerTimesWatchExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PrayerTimesWatchExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -49,6 +92,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				WatchConnectivityReceiver.swift,
 			);
 			target = E65A82222ED593F400194B3D /* PrayerTimesWidgetExtension */;
 		};
@@ -61,6 +105,47 @@
 			);
 			target = E65A82222ED593F400194B3D /* PrayerTimesWidgetExtension */;
 		};
+		E6D6E18A2F596FE900CF2C15 /* Exceptions for "PrayerTimesWatch" folder in "PrayerTimesWatchExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E6D6E1792F596FE800CF2C15 /* PrayerTimesWatchExtension */;
+		};
+		E6D6E1932F5970FD00CF2C15 /* Exceptions for "PrayerTimes" folder in "PrayerTimesWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/Prayer.swift,
+				Services/PrayerTimeCalculator.swift,
+				Services/SharedDataManager.swift,
+			);
+			target = E6D6E1662F596F3900CF2C15 /* PrayerTimesWatch Watch App */;
+		};
+		E6D6E1942F5970FD00CF2C15 /* Exceptions for "PrayerTimes" folder in "PrayerTimesWatchExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/Prayer.swift,
+				Services/PrayerTimeCalculator.swift,
+				Services/SharedDataManager.swift,
+			);
+			target = E6D6E1792F596FE800CF2C15 /* PrayerTimesWatchExtension */;
+		};
+		E6D6E19B2F59712300CF2C15 /* Exceptions for "PrayerTimesWidget" folder in "PrayerTimesWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				PrayerTimesWidgetTimelineProvider.swift,
+				WatchConnectivityReceiver.swift,
+			);
+			target = E6D6E1662F596F3900CF2C15 /* PrayerTimesWatch Watch App */;
+		};
+		E6D6E19C2F59712300CF2C15 /* Exceptions for "PrayerTimesWidget" folder in "PrayerTimesWatchExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				PrayerTimesWidgetTimelineProvider.swift,
+				WatchConnectivityReceiver.swift,
+			);
+			target = E6D6E1792F596FE800CF2C15 /* PrayerTimesWatchExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -68,6 +153,8 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				E65A82412ED625E600194B3D /* Exceptions for "PrayerTimes" folder in "PrayerTimesWidgetExtension" target */,
+				E6D6E1932F5970FD00CF2C15 /* Exceptions for "PrayerTimes" folder in "PrayerTimesWatch Watch App" target */,
+				E6D6E1942F5970FD00CF2C15 /* Exceptions for "PrayerTimes" folder in "PrayerTimesWatchExtension" target */,
 			);
 			path = PrayerTimes;
 			sourceTree = "<group>";
@@ -76,8 +163,23 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				E65A82382ED593F700194B3D /* Exceptions for "PrayerTimesWidget" folder in "PrayerTimesWidgetExtension" target */,
+				E6D6E19B2F59712300CF2C15 /* Exceptions for "PrayerTimesWidget" folder in "PrayerTimesWatch Watch App" target */,
+				E6D6E19C2F59712300CF2C15 /* Exceptions for "PrayerTimesWidget" folder in "PrayerTimesWatchExtension" target */,
 			);
 			path = PrayerTimesWidget;
+			sourceTree = "<group>";
+		};
+		E6D6E1682F596F3900CF2C15 /* PrayerTimesWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "PrayerTimesWatch Watch App";
+			sourceTree = "<group>";
+		};
+		E6D6E17D2F596FE800CF2C15 /* PrayerTimesWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E6D6E18A2F596FE900CF2C15 /* Exceptions for "PrayerTimesWatch" folder in "PrayerTimesWatchExtension" target */,
+			);
+			path = PrayerTimesWatch;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -99,15 +201,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E6D6E1642F596F3900CF2C15 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6D6E1772F596FE800CF2C15 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E6D6E17C2F596FE800CF2C15 /* SwiftUI.framework in Frameworks */,
+				E6D6E17B2F596FE800CF2C15 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		E65A80E52ED58C1A00194B3D = {
 			isa = PBXGroup;
 			children = (
+				E6D6E1902F5970A100CF2C15 /* PrayerTimesWatchExtension.entitlements */,
 				E65A82442ED6290D00194B3D /* PrayerTimesWidgetExtension.entitlements */,
 				E65A80F02ED58C1A00194B3D /* PrayerTimes */,
 				E65A82292ED593F400194B3D /* PrayerTimesWidget */,
+				E6D6E1682F596F3900CF2C15 /* PrayerTimesWatch Watch App */,
+				E6D6E17D2F596FE800CF2C15 /* PrayerTimesWatch */,
 				E65A82242ED593F400194B3D /* Frameworks */,
 				E65A80EF2ED58C1A00194B3D /* Products */,
 			);
@@ -118,6 +239,8 @@
 			children = (
 				E65A80EE2ED58C1A00194B3D /* PrayerTimes.app */,
 				E65A82232ED593F400194B3D /* PrayerTimesWidgetExtension.appex */,
+				E6D6E1672F596F3900CF2C15 /* PrayerTimesWatch Watch App.app */,
+				E6D6E17A2F596FE800CF2C15 /* PrayerTimesWatchExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -142,11 +265,13 @@
 				E65A80EB2ED58C1A00194B3D /* Frameworks */,
 				E65A80EC2ED58C1A00194B3D /* Resources */,
 				E65A823C2ED593F700194B3D /* Embed Foundation Extensions */,
+				E6D6E1722F596F3B00CF2C15 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				E65A82362ED593F700194B3D /* PBXTargetDependency */,
+				E6D6E1702F596F3B00CF2C15 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E65A80F02ED58C1A00194B3D /* PrayerTimes */,
@@ -180,6 +305,52 @@
 			productReference = E65A82232ED593F400194B3D /* PrayerTimesWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		E6D6E1662F596F3900CF2C15 /* PrayerTimesWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6D6E1752F596F3B00CF2C15 /* Build configuration list for PBXNativeTarget "PrayerTimesWatch Watch App" */;
+			buildPhases = (
+				E6D6E1632F596F3900CF2C15 /* Sources */,
+				E6D6E1642F596F3900CF2C15 /* Frameworks */,
+				E6D6E1652F596F3900CF2C15 /* Resources */,
+				E6D6E18E2F596FE900CF2C15 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E6D6E1882F596FE900CF2C15 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E6D6E1682F596F3900CF2C15 /* PrayerTimesWatch Watch App */,
+			);
+			name = "PrayerTimesWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "PrayerTimesWatch Watch App";
+			productReference = E6D6E1672F596F3900CF2C15 /* PrayerTimesWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E6D6E1792F596FE800CF2C15 /* PrayerTimesWatchExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6D6E18B2F596FE900CF2C15 /* Build configuration list for PBXNativeTarget "PrayerTimesWatchExtension" */;
+			buildPhases = (
+				E6D6E1762F596FE800CF2C15 /* Sources */,
+				E6D6E1772F596FE800CF2C15 /* Frameworks */,
+				E6D6E1782F596FE800CF2C15 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E6D6E17D2F596FE800CF2C15 /* PrayerTimesWatch */,
+			);
+			name = PrayerTimesWatchExtension;
+			packageProductDependencies = (
+			);
+			productName = PrayerTimesWatchExtension;
+			productReference = E6D6E17A2F596FE800CF2C15 /* PrayerTimesWatchExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -187,14 +358,20 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
-				LastUpgradeCheck = 1620;
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					E65A80ED2ED58C1A00194B3D = {
 						CreatedOnToolsVersion = 16.2;
 					};
 					E65A82222ED593F400194B3D = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					E6D6E1662F596F3900CF2C15 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					E6D6E1792F596FE800CF2C15 = {
+						CreatedOnToolsVersion = 26.3;
 					};
 				};
 			};
@@ -214,6 +391,8 @@
 			targets = (
 				E65A80ED2ED58C1A00194B3D /* PrayerTimes */,
 				E65A82222ED593F400194B3D /* PrayerTimesWidgetExtension */,
+				E6D6E1662F596F3900CF2C15 /* PrayerTimesWatch Watch App */,
+				E6D6E1792F596FE800CF2C15 /* PrayerTimesWatchExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -227,6 +406,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E65A82212ED593F400194B3D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6D6E1652F596F3900CF2C15 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6D6E1782F596FE800CF2C15 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -250,6 +443,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E6D6E1632F596F3900CF2C15 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6D6E1762F596FE800CF2C15 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -257,6 +464,16 @@
 			isa = PBXTargetDependency;
 			target = E65A82222ED593F400194B3D /* PrayerTimesWidgetExtension */;
 			targetProxy = E65A82352ED593F700194B3D /* PBXContainerItemProxy */;
+		};
+		E6D6E1702F596F3B00CF2C15 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E6D6E1662F596F3900CF2C15 /* PrayerTimesWatch Watch App */;
+			targetProxy = E6D6E16F2F596F3B00CF2C15 /* PBXContainerItemProxy */;
+		};
+		E6D6E1882F596FE900CF2C15 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E6D6E1792F596FE800CF2C15 /* PrayerTimesWatchExtension */;
+			targetProxy = E6D6E1872F596FE900CF2C15 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -296,6 +513,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = M6WNM23GHA;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -319,6 +537,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -359,6 +578,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = M6WNM23GHA;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -375,6 +595,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -389,7 +610,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PrayerTimes/Preview Content\"";
-				DEVELOPMENT_TEAM = M6WNM23GHA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Prayer Times needs your location to calculate accurate prayer times for your area and send prayer time notifications.";
@@ -421,7 +641,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"PrayerTimes/Preview Content\"";
-				DEVELOPMENT_TEAM = M6WNM23GHA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Prayer Times needs your location to calculate accurate prayer times for your area and send prayer time notifications.";
@@ -452,7 +671,6 @@
 				CODE_SIGN_ENTITLEMENTS = PrayerTimesWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = M6WNM23GHA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrayerTimesWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PrayerTimesWidget;
@@ -480,7 +698,6 @@
 				CODE_SIGN_ENTITLEMENTS = PrayerTimesWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = M6WNM23GHA;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PrayerTimesWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = PrayerTimesWidget;
@@ -497,6 +714,138 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E6D6E1732F596F3B00CF2C15 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "PrayerTimesWatch Watch App/PrayerTimesWatch Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = PrayerTimesWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = tektechinc.PrayerTimes;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = tektechinc.PrayerTimes.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
+			};
+			name = Debug;
+		};
+		E6D6E1742F596F3B00CF2C15 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "PrayerTimesWatch Watch App/PrayerTimesWatch Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = PrayerTimesWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = tektechinc.PrayerTimes;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = tektechinc.PrayerTimes.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
+			};
+			name = Release;
+		};
+		E6D6E18C2F596FE900CF2C15 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = PrayerTimesWatchExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PrayerTimesWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PrayerTimesWatch;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = tektechinc.PrayerTimes.watchkitapp.PrayerTimesWatch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
+			};
+			name = Debug;
+		};
+		E6D6E18D2F596FE900CF2C15 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = PrayerTimesWatchExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PrayerTimesWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PrayerTimesWatch;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = tektechinc.PrayerTimes.watchkitapp.PrayerTimesWatch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
 			};
 			name = Release;
 		};
@@ -526,6 +875,24 @@
 			buildConfigurations = (
 				E65A823A2ED593F700194B3D /* Debug */,
 				E65A823B2ED593F700194B3D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E6D6E1752F596F3B00CF2C15 /* Build configuration list for PBXNativeTarget "PrayerTimesWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6D6E1732F596F3B00CF2C15 /* Debug */,
+				E6D6E1742F596F3B00CF2C15 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E6D6E18B2F596FE900CF2C15 /* Build configuration list for PBXNativeTarget "PrayerTimesWatchExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6D6E18C2F596FE900CF2C15 /* Debug */,
+				E6D6E18D2F596FE900CF2C15 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

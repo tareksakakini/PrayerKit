@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
@@ -30,12 +31,29 @@ struct ContentView: View {
                     
                     // Location error message
                     if let error = locationManager.locationError {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(.orange)
-                            Text(error)
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
-                                .foregroundColor(.white.opacity(0.8))
+                        VStack(spacing: 12) {
+                            HStack {
+                                Image(systemName: "location.fill.badge.exclamationmark")
+                                    .foregroundColor(.orange)
+                                Text(error)
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                            if locationManager.authorizationStatus == .denied || locationManager.authorizationStatus == .restricted {
+                                Button {
+                                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                                        UIApplication.shared.open(url)
+                                    }
+                                } label: {
+                                    Text("Open Settings")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(Color.orange)
+                                        .cornerRadius(10)
+                                }
+                            }
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)

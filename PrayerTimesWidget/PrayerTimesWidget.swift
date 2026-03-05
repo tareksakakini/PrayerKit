@@ -10,21 +10,7 @@ import SwiftUI
 
 struct PrayerTimesWidget: Widget {
     let kind: String = "PrayerTimesWidget"
-    
-    init() {
-        #if DEBUG
-        // Override \"now\" for widget debugging at 10:00 AM local time
-        DateProvider.now = {
-            let calendar = Calendar.current
-            var components = calendar.dateComponents([.year, .month, .day], from: Date())
-            components.hour = 10
-            components.minute = 0
-            components.second = 0
-            return calendar.date(from: components) ?? Date()
-        }
-        #endif
-    }
-    
+
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: PrayerTimesTimelineProvider()) { entry in
             PrayerTimesWidgetEntryView(entry: entry)
