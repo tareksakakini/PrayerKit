@@ -11,6 +11,20 @@ import SwiftUI
 struct PrayerTimesWidget: Widget {
     let kind: String = "PrayerTimesWidget"
     
+    init() {
+        #if DEBUG
+        // Override \"now\" for widget debugging at 10:00 AM local time
+        DateProvider.now = {
+            let calendar = Calendar.current
+            var components = calendar.dateComponents([.year, .month, .day], from: Date())
+            components.hour = 10
+            components.minute = 0
+            components.second = 0
+            return calendar.date(from: components) ?? Date()
+        }
+        #endif
+    }
+    
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: PrayerTimesTimelineProvider()) { entry in
             PrayerTimesWidgetEntryView(entry: entry)
@@ -52,36 +66,57 @@ struct PrayerTimesWidgetEntryView: View {
     var body: some View {
         Group {
             if let prayers = entry.prayers {
-                HStack(spacing: 0) {
-                    ForEach(prayers.prayers) { prayer in
-                        let isNext = entry.nextPrayer?.name == prayer.name
+                VStack(spacing: 6) {
+                    HStack {
+                        Text(entry.hijriDate)
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.7))
                         
-                        VStack(spacing: 4) {
-                            Image(systemName: prayer.name.icon)
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(isNext ? gold : .white.opacity(0.5))
-                            
-                            Text(prayer.name.rawValue)
-                                .font(.system(size: 10, weight: isNext ? .bold : .medium, design: .rounded))
-                                .foregroundColor(isNext ? .white : .white.opacity(0.6))
-                            
-                            Text(Self.timeFormatter.string(from: prayer.time))
-                                .font(.system(size: 14, weight: isNext ? .bold : .semibold, design: .rounded))
-                                .foregroundColor(isNext ? gold : .white)
-                            
-                            Text(Self.periodFormatter.string(from: prayer.time))
-                                .font(.system(size: 9, weight: .medium, design: .rounded))
-                                .foregroundColor(isNext ? gold.opacity(0.8) : .white.opacity(0.5))
+                        Spacer()
+                        
+                        if let nextPrayer = entry.nextPrayer, let timeUntil = entry.timeUntil {
+                            HStack(spacing: 4) {
+                                Text(nextPrayer.name.rawValue)
+                                    .foregroundColor(gold)
+                                Text("in \(timeUntil)")
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(isNext ? Color.white.opacity(0.1) : Color.clear)
-                        )
                     }
+                    .padding(.horizontal, 12)
+                    
+                    HStack(spacing: 0) {
+                        ForEach(prayers.prayers) { prayer in
+                            let isNext = entry.nextPrayer?.name == prayer.name
+                            
+                            VStack(spacing: 3) {
+                                Image(systemName: prayer.name.icon)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(isNext ? gold : .white.opacity(0.5))
+                                
+                                Text(prayer.name.rawValue)
+                                    .font(.system(size: 10, weight: isNext ? .bold : .medium, design: .rounded))
+                                    .foregroundColor(isNext ? .white : .white.opacity(0.6))
+                                
+                                Text(Self.timeFormatter.string(from: prayer.time))
+                                    .font(.system(size: 13, weight: isNext ? .bold : .semibold, design: .rounded))
+                                    .foregroundColor(isNext ? gold : .white)
+                                
+                                Text(Self.periodFormatter.string(from: prayer.time))
+                                    .font(.system(size: 9, weight: .medium, design: .rounded))
+                                    .foregroundColor(isNext ? gold.opacity(0.8) : .white.opacity(0.5))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(isNext ? Color.white.opacity(0.1) : Color.clear)
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 4)
                 }
-                .padding(.horizontal, 4)
             } else {
                 VStack(spacing: 8) {
                     Image(systemName: "location.slash.fill")
@@ -105,6 +140,7 @@ struct PrayerTimesWidgetEntryView: View {
         nextPrayer: nil,
         timeUntil: nil,
         cityName: "San Francisco",
-        dateString: "Monday, November 24"
+        dateString: "Monday, November 24",
+        hijriDate: "9 Ramadan 1447 AH"
     )
 }

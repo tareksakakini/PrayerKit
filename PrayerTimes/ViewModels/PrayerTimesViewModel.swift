@@ -88,7 +88,7 @@ class PrayerTimesViewModel: ObservableObject {
             asrMethod: asrMethod
         )
         
-        let prayers = calculator.calculatePrayerTimes(for: Date(), at: coordinate)
+        let prayers = calculator.calculatePrayerTimes(for: DateProvider.now(), at: coordinate)
         
         DispatchQueue.main.async {
             self.dailyPrayers = prayers
@@ -109,7 +109,7 @@ class PrayerTimesViewModel: ObservableObject {
             return nil
         }
         
-        let now = Date()
+        let now = DateProvider.now()
         let difference = nextPrayer.time.timeIntervalSince(now)
         
         if difference <= 0 {
@@ -129,7 +129,7 @@ class PrayerTimesViewModel: ObservableObject {
     var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d"
-        return formatter.string(from: Date())
+        return formatter.string(from: DateProvider.now())
     }
     
     var hijriDate: String {
@@ -137,7 +137,7 @@ class PrayerTimesViewModel: ObservableObject {
         let formatter = DateFormatter()
         formatter.calendar = islamic
         formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: Date()) + " AH"
+        return formatter.string(from: DateProvider.now()) + " AH"
     }
 }
 

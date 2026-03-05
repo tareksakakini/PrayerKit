@@ -16,6 +16,7 @@ struct PrayerTimesEntry: TimelineEntry {
     let timeUntil: String?
     let cityName: String
     let dateString: String
+    let hijriDate: String
 }
 
 struct PrayerTimesTimelineProvider: TimelineProvider {
@@ -24,22 +25,23 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
     func placeholder(in context: Context) -> PrayerTimesEntry {
         let samplePrayers = createSamplePrayers()
         return PrayerTimesEntry(
-            date: Date(),
+            date: DateProvider.now(),
             prayers: samplePrayers,
             nextPrayer: samplePrayers.nextPrayer,
             timeUntil: "2h 30m",
             cityName: "San Francisco",
-            dateString: "Monday, November 24"
+            dateString: "Monday, November 24",
+            hijriDate: "9 Ramadan 1447 AH"
         )
     }
     
     func getSnapshot(in context: Context, completion: @escaping (PrayerTimesEntry) -> Void) {
-        let entry = createEntry(for: Date())
+        let entry = createEntry(for: DateProvider.now())
         completion(entry)
     }
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerTimesEntry>) -> Void) {
-        let currentDate = Date()
+        let currentDate = DateProvider.now()
         let entry = createEntry(for: currentDate)
         
         var nextUpdateDate: Date
@@ -100,20 +102,27 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         dateFormatter.dateFormat = "EEEE, MMMM d"
         let dateString = dateFormatter.string(from: date)
         
+        let islamic = Calendar(identifier: .islamicUmmAlQura)
+        let hijriFormatter = DateFormatter()
+        hijriFormatter.calendar = islamic
+        hijriFormatter.dateFormat = "d MMMM yyyy"
+        let hijriDate = hijriFormatter.string(from: date) + " AH"
+        
         return PrayerTimesEntry(
             date: date,
             prayers: dailyPrayers,
             nextPrayer: nextPrayer,
             timeUntil: timeUntil,
             cityName: cityName,
-            dateString: dateString
+            dateString: dateString,
+            hijriDate: hijriDate
         )
     }
     
     private func calculateTimeUntil(nextPrayer: Prayer?) -> String? {
         guard let nextPrayer = nextPrayer else { return nil }
         
-        let now = Date()
+        let now = DateProvider.now()
         let difference = nextPrayer.time.timeIntervalSince(now)
         
         if difference <= 0 {

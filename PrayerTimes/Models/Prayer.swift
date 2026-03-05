@@ -7,6 +7,10 @@
 
 import Foundation
 
+enum DateProvider {
+    static var now: () -> Date = { Date() }
+}
+
 enum PrayerName: String, CaseIterable, Identifiable, Codable {
     case fajr = "Fajr"
     case sunrise = "Sunrise"
@@ -58,7 +62,7 @@ struct Prayer: Identifiable, Codable {
     }
     
     var isPast: Bool {
-        return time < Date()
+        return time < DateProvider.now()
     }
 }
 
@@ -67,12 +71,12 @@ struct DailyPrayers: Codable {
     let prayers: [Prayer]
     
     var nextPrayer: Prayer? {
-        let now = Date()
+        let now = DateProvider.now()
         return prayers.first { $0.time > now }
     }
     
     var currentPrayer: Prayer? {
-        let now = Date()
+        let now = DateProvider.now()
         let pastPrayers = prayers.filter { $0.time <= now }
         return pastPrayers.last
     }
