@@ -38,18 +38,41 @@ struct NextPrayerComplicationView: View {
     private var oneLineStatus: String {
         "\(display.title) \(display.detail)"
     }
-    
-    /// Progress (0–1) from previous prayer to next prayer for corner gauge (uses entry date for seamless updates)
-    private func cornerGaugeProgress(prayers: DailyPrayers, nextPrayer: Prayer, asOf date: Date) -> Double {
-        guard let nextIndex = prayers.prayers.firstIndex(where: { $0.name == nextPrayer.name }),
-              nextIndex > 0 else {
-            return 0.5 // First prayer of day: show halfway
+
+    private var cornerTitle: String {
+        guard let next = entry.nextPrayer else { return display.title }
+        switch next.name {
+        case .fajr:
+            return "Fjr"
+        case .sunrise:
+            return "Sun"
+        case .dhuhr:
+            return "Dhr"
+        case .asr:
+            return "Asr"
+        case .maghrib:
+            return "Mgrb"
+        case .isha:
+            return "Isha"
         }
-        let prev = prayers.prayers[nextIndex - 1]
-        let total = nextPrayer.time.timeIntervalSince(prev.time)
-        let elapsed = date.timeIntervalSince(prev.time)
-        guard total > 0 else { return 1 }
-        return min(max(elapsed / total, 0), 1)
+    }
+
+    private var prayerColor: Color {
+        guard let next = entry.nextPrayer else { return .secondary }
+        switch next.name {
+        case .fajr:
+            return .cyan
+        case .sunrise:
+            return .orange
+        case .dhuhr:
+            return .yellow
+        case .asr:
+            return .mint
+        case .maghrib:
+            return .pink
+        case .isha:
+            return .indigo
+        }
     }
 
     var body: some View {
@@ -98,24 +121,20 @@ struct NextPrayerComplicationView: View {
             .widgetLabel("\(display.title) \(display.detail)")
 
         case .accessoryCorner:
-            if let next = entry.nextPrayer, entry.timeUntil != nil, let prayers = entry.prayers {
-                let progress = cornerGaugeProgress(prayers: prayers, nextPrayer: next, asOf: entry.date)
-                Gauge(value: progress, in: 0...1) {
-                    Image(systemName: next.name.icon)
-                } currentValueLabel: {
-                    EmptyView()
-                } minimumValueLabel: {
-                    EmptyView()
-                } maximumValueLabel: {
-                    EmptyView()
-                }
-                .gaugeStyle(.accessoryCircularCapacity)
+            if entry.nextPrayer != nil, entry.timeUntil != nil {
+                Text(cornerTitle)
+                    .font(.system(.title3, design: .rounded).weight(.black))
+                    .foregroundStyle(prayerColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+                    .widgetCurvesContent()
                 .widgetLabel {
-                    Text("\(display.title) \(display.detail)")
+                    Text(display.detail)
                 }
             } else {
                 Image(systemName: "moon.stars.fill")
                     .font(.system(size: 24, weight: .medium))
+                    .foregroundStyle(.secondary)
                     .widgetLabel {
                         Text("Open app")
                     }
