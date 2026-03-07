@@ -8,6 +8,7 @@
 import Foundation
 import CoreLocation
 import Combine
+import UserNotifications
 
 class PrayerTimesViewModel: ObservableObject {
     @Published var dailyPrayers: DailyPrayers?
@@ -29,19 +30,42 @@ class PrayerTimesViewModel: ObservableObject {
             }
         }
     }
+    @Published var notificationsEnabled: Bool = false {
+        didSet {
+            handleNotificationToggleChange()
+        }
+    }
+    @Published var notificationOffsetMinutes: Int = 0 {
+        didSet {
+            saveNotificationPreferences()
+            if notificationsEnabled {
+                rescheduleNotificationsForCurrentState()
+            }
+        }
+    }
+    @Published private(set) var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
     
     private var locationManager: LocationManager
     private var cancellables = Set<AnyCancellable>()
     private var countdownTimer: Timer?
+    @Published private var selectedPrayerNotifications = Set(
+        PrayerName.allCases.filter(\.defaultNotificationEnabled)
+    )
+    private var isUpdatingNotificationsInternally = false
     
     private let calculationMethodKey = "calculationMethod"
     private let asrMethodKey = "asrMethod"
+    private let notificationsEnabledKey = "notificationsEnabled"
+    private let notificationOffsetKey = "notificationOffsetMinutes"
+    private let notificationPrayerNamesKey = "notificationPrayerNames"
     
     init(locationManager: LocationManager) {
         self.locationManager = locationManager
         loadPreferences()
+        loadNotificationPreferences()
         setupBindings()
         startCountdownTimer()
+        refreshNotificationAuthorizationStatus()
     }
     
     deinit {
@@ -134,6 +158,8 @@ class PrayerTimesViewModel: ObservableObject {
         
         let targetDate = date ?? DateProvider.now()
         let prayers = calculator.calculatePrayerTimes(for: targetDate, at: coordinate)
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: targetDate)
+        let tomorrowPrayers = tomorrow.map { calculator.calculatePrayerTimes(for: $0, at: coordinate) }
         
         DispatchQueue.main.async {
             self.dailyPrayers = prayers
@@ -143,6 +169,10 @@ class PrayerTimesViewModel: ObservableObject {
             SharedDataManager.shared.savePrayerTimes(prayers)
             // Sync to Watch (runs on separate device, cannot access iPhone App Group)
             WatchConnectivityManager.shared.syncToWatch()
+            
+            if self.notificationsEnabled {
+                self.schedulePrayerNotifications(primary: prayers, secondary: tomorrowPrayers)
+            }
         }
     }
     
@@ -153,6 +183,7 @@ class PrayerTimesViewModel: ObservableObject {
     
     func refreshCountdown() {
         countdownTick = Date()
+        refreshNotificationAuthorizationStatus()
         if dailyPrayers != nil && dailyPrayers?.nextPrayer == nil,
            let location = locationManager.location,
            let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: DateProvider.now()) {
@@ -197,5 +228,151 @@ class PrayerTimesViewModel: ObservableObject {
         formatter.dateFormat = "d MMMM yyyy"
         return formatter.string(from: DateProvider.now()) + " AH"
     }
+    
+    var notificationOffsetLabel: String {
+        switch notificationOffsetMinutes {
+        case ..<0:
+            return "\(abs(notificationOffsetMinutes)) min before"
+        case 0:
+            return "On time"
+        default:
+            return "\(notificationOffsetMinutes) min after"
+        }
+    }
+    
+    var notificationAuthorizationLabel: String {
+        switch notificationAuthorizationStatus {
+        case .notDetermined:
+            return "Permission not requested"
+        case .denied:
+            return "Permission denied (enable in iOS Settings)"
+        case .authorized:
+            return "Authorized"
+        case .provisional:
+            return "Provisional"
+        case .ephemeral:
+            return "Ephemeral"
+        @unknown default:
+            return "Unknown"
+        }
+    }
+    
+    var notificationOffsetOptions: [Int] {
+        [-15, -10, -5, 0, 5, 10]
+    }
+    
+    func isPrayerNotificationEnabled(_ prayerName: PrayerName) -> Bool {
+        selectedPrayerNotifications.contains(prayerName)
+    }
+    
+    func setPrayerNotificationEnabled(_ enabled: Bool, for prayerName: PrayerName) {
+        if enabled {
+            selectedPrayerNotifications.insert(prayerName)
+        } else {
+            selectedPrayerNotifications.remove(prayerName)
+        }
+        saveNotificationPreferences()
+        
+        if notificationsEnabled {
+            rescheduleNotificationsForCurrentState()
+        }
+    }
+    
+    func setNotificationsEnabled(_ enabled: Bool) {
+        notificationsEnabled = enabled
+    }
+    
+    func sendDebugNotification() {
+        NotificationManager.shared.requestAuthorization { [weak self] granted in
+            DispatchQueue.main.async {
+                self?.refreshNotificationAuthorizationStatus()
+                guard granted else { return }
+                NotificationManager.shared.scheduleDebugNotification(after: 5)
+            }
+        }
+    }
+    
+    private func loadNotificationPreferences() {
+        notificationsEnabled = UserDefaults.standard.bool(forKey: notificationsEnabledKey)
+        
+        if let storedOffset = UserDefaults.standard.object(forKey: notificationOffsetKey) as? Int {
+            notificationOffsetMinutes = storedOffset
+        } else {
+            notificationOffsetMinutes = 0
+        }
+        
+        if let rawNames = UserDefaults.standard.array(forKey: notificationPrayerNamesKey) as? [String] {
+            let restored = Set(rawNames.compactMap { PrayerName(rawValue: $0) })
+            if !restored.isEmpty {
+                selectedPrayerNotifications = restored
+            }
+        }
+    }
+    
+    private func saveNotificationPreferences() {
+        UserDefaults.standard.set(notificationsEnabled, forKey: notificationsEnabledKey)
+        UserDefaults.standard.set(notificationOffsetMinutes, forKey: notificationOffsetKey)
+        UserDefaults.standard.set(
+            selectedPrayerNotifications.map(\.rawValue),
+            forKey: notificationPrayerNamesKey
+        )
+    }
+    
+    private func handleNotificationToggleChange() {
+        guard !isUpdatingNotificationsInternally else { return }
+        saveNotificationPreferences()
+        
+        if notificationsEnabled {
+            NotificationManager.shared.requestAuthorization { [weak self] granted in
+                guard let self else { return }
+                DispatchQueue.main.async {
+                    self.refreshNotificationAuthorizationStatus()
+                    
+                    if granted {
+                        self.rescheduleNotificationsForCurrentState()
+                    } else {
+                        self.isUpdatingNotificationsInternally = true
+                        self.notificationsEnabled = false
+                        self.isUpdatingNotificationsInternally = false
+                        self.saveNotificationPreferences()
+                        NotificationManager.shared.clearScheduledPrayerNotifications()
+                    }
+                }
+            }
+        } else {
+            NotificationManager.shared.clearScheduledPrayerNotifications()
+            refreshNotificationAuthorizationStatus()
+        }
+    }
+    
+    private func refreshNotificationAuthorizationStatus() {
+        NotificationManager.shared.authorizationStatus { [weak self] status in
+            DispatchQueue.main.async {
+                self?.notificationAuthorizationStatus = status
+            }
+        }
+    }
+    
+    private func rescheduleNotificationsForCurrentState() {
+        guard notificationsEnabled, let location = locationManager.location else { return }
+        
+        let calculator = PrayerTimeCalculator(
+            calculationMethod: calculationMethod,
+            asrMethod: asrMethod
+        )
+        let today = calculator.calculatePrayerTimes(for: DateProvider.now(), at: location)
+        let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: DateProvider.now())
+        let tomorrow = tomorrowDate.map { calculator.calculatePrayerTimes(for: $0, at: location) }
+        
+        schedulePrayerNotifications(primary: today, secondary: tomorrow)
+    }
+    
+    private func schedulePrayerNotifications(primary: DailyPrayers, secondary: DailyPrayers?) {
+        let days = [primary, secondary].compactMap { $0 }
+        NotificationManager.shared.scheduleNotifications(
+            for: days,
+            offsetMinutes: notificationOffsetMinutes,
+            enabledPrayerNames: selectedPrayerNotifications
+        )
+    }
 }
-

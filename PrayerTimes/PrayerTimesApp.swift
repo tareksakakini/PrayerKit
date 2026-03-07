@@ -13,6 +13,7 @@ struct PrayerTimesApp: App {
     
     init() {
         WatchConnectivityManager.shared.activate()
+        _ = NotificationManager.shared
     }
     
     var body: some Scene {

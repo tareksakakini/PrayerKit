@@ -42,6 +42,10 @@ enum PrayerName: String, CaseIterable, Identifiable, Codable {
         case .isha: return "moon.fill"
         }
     }
+    
+    var defaultNotificationEnabled: Bool {
+        self != .sunrise
+    }
 }
 
 struct Prayer: Identifiable, Codable {
@@ -81,4 +85,3 @@ struct DailyPrayers: Codable {
         return pastPrayers.last
     }
 }
-

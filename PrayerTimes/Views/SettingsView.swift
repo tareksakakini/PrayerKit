@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import UIKit
+import UserNotifications
 
 struct SettingsView: View {
     @ObservedObject var viewModel: PrayerTimesViewModel
@@ -43,6 +45,45 @@ struct SettingsView: View {
                                             .background(Color.white.opacity(0.1))
                                             .padding(.leading, 20)
                                     }
+                                }
+                            }
+                        }
+                        
+                        // Notifications Section
+                        settingsSection(title: "Notifications") {
+                            VStack(spacing: 0) {
+                                notificationToggleRow
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+                                    .padding(.leading, 20)
+                                offsetPickerRow
+                                Divider()
+                                    .background(Color.white.opacity(0.1))
+                                    .padding(.leading, 20)
+                                debugNotificationRow
+                                
+                                if viewModel.notificationsEnabled {
+                                    Divider()
+                                        .background(Color.white.opacity(0.1))
+                                        .padding(.leading, 20)
+                                    
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        Text("Notify For")
+                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                            .foregroundColor(.white.opacity(0.9))
+                                            .padding(.horizontal, 20)
+                                            .padding(.top, 14)
+                                        
+                                        ForEach(Array(PrayerName.allCases.enumerated()), id: \.element.id) { index, prayer in
+                                            prayerNotificationRow(prayer: prayer)
+                                            if index < PrayerName.allCases.count - 1 {
+                                                Divider()
+                                                    .background(Color.white.opacity(0.1))
+                                                    .padding(.leading, 20)
+                                            }
+                                        }
+                                    }
+                                    .padding(.bottom, 8)
                                 }
                             }
                         }
@@ -205,6 +246,12 @@ struct SettingsView: View {
                 .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
                 .lineSpacing(4)
                 .padding(.top, 8)
+            
+            Text("Notifications are local on-device alerts based on your current location and chosen method.")
+                .font(.system(size: 13, weight: .regular, design: .rounded))
+                .foregroundColor(.white.opacity(0.6))
+                .lineSpacing(3)
+                .padding(.top, 6)
         }
         .padding(20)
         .background(
@@ -215,6 +262,133 @@ struct SettingsView: View {
                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
         )
+    }
+    
+    // MARK: - Notifications
+    private var notificationToggleRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Prayer Notifications")
+                        .font(.system(size: 16, weight: .regular, design: .rounded))
+                        .foregroundColor(.white)
+                    Text(viewModel.notificationAuthorizationLabel)
+                        .font(.system(size: 12, weight: .regular, design: .rounded))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: Binding(
+                    get: { viewModel.notificationsEnabled },
+                    set: { viewModel.setNotificationsEnabled($0) }
+                ))
+                .labelsHidden()
+                .tint(Color(red: 0.85, green: 0.75, blue: 0.55))
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            
+            if viewModel.notificationAuthorizationStatus == .denied {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Open iOS Notification Settings")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+            }
+        }
+    }
+    
+    private var offsetPickerRow: some View {
+        HStack {
+            Text("Alert Timing")
+                .font(.system(size: 16, weight: .regular, design: .rounded))
+                .foregroundColor(.white)
+            
+            Spacer()
+            
+            Picker("Alert Timing", selection: $viewModel.notificationOffsetMinutes) {
+                ForEach(viewModel.notificationOffsetOptions, id: \.self) { offset in
+                    Text(offsetLabel(offset))
+                        .tag(offset)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(!viewModel.notificationsEnabled)
+            .tint(Color(red: 0.85, green: 0.75, blue: 0.55))
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+    }
+    
+    private var debugNotificationRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                viewModel.sendDebugNotification()
+            } label: {
+                HStack {
+                    Image(systemName: "bell.badge")
+                        .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                    Text("Send Test Notification")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Text("5s")
+                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Text("Use this to quickly verify notification permissions and delivery.")
+                .font(.system(size: 12, weight: .regular, design: .rounded))
+                .foregroundColor(.white.opacity(0.6))
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+        }
+    }
+    
+    private func prayerNotificationRow(prayer: PrayerName) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(prayer.rawValue)
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .foregroundColor(.white)
+                Text(prayer.arabicName)
+                    .font(.system(size: 12, weight: .regular, design: .serif))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            
+            Spacer()
+            
+            Toggle("", isOn: Binding(
+                get: { viewModel.isPrayerNotificationEnabled(prayer) },
+                set: { viewModel.setPrayerNotificationEnabled($0, for: prayer) }
+            ))
+            .labelsHidden()
+            .tint(Color(red: 0.85, green: 0.75, blue: 0.55))
+            .disabled(!viewModel.notificationsEnabled)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+    }
+    
+    private func offsetLabel(_ offset: Int) -> String {
+        if offset == 0 {
+            return "On time"
+        }
+        if offset < 0 {
+            return "\(abs(offset)) min before"
+        }
+        return "\(offset) min after"
     }
 }
 
