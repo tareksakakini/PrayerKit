@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var prayers: DailyPrayers?
     @State private var cityName: String = ""
     @State private var hijriDate: String = ""
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         Group {
@@ -73,11 +74,16 @@ struct ContentView: View {
         .onAppear {
             loadData()
         }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                loadData()
+            }
+        }
     }
     
     private func loadData() {
         let shared = SharedDataManager.shared
-        prayers = shared.loadPrayerTimes()
+        prayers = resolvePrayers(shared: shared, asOf: DateProvider.now())
         cityName = shared.loadCityName()
         
         let islamic = Calendar(identifier: .islamicUmmAlQura)
@@ -85,6 +91,41 @@ struct ContentView: View {
         formatter.calendar = islamic
         formatter.dateFormat = "d MMMM yyyy"
         hijriDate = formatter.string(from: Date()) + " AH"
+    }
+    
+    private func resolvePrayers(shared: SharedDataManager, asOf date: Date) -> DailyPrayers? {
+        var dailyPrayers = shared.loadPrayerTimes()
+        let calendar = Calendar.current
+        let location = shared.loadLocation()
+        
+        // Recalculate if missing or from another day, to avoid stale next-prayer values.
+        if dailyPrayers == nil || !calendar.isDate(dailyPrayers!.date, inSameDayAs: date) {
+            if let location = location {
+                let calculator = PrayerTimeCalculator(
+                    calculationMethod: shared.loadCalculationMethod(),
+                    asrMethod: shared.loadAsrMethod()
+                )
+                dailyPrayers = calculator.calculatePrayerTimes(for: date, at: location)
+                if let dailyPrayers {
+                    shared.savePrayerTimes(dailyPrayers)
+                }
+            }
+        }
+        
+        // After the last prayer, show tomorrow's Fajr as next.
+        if dailyPrayers?.nextPrayer == nil,
+           let location = location,
+           let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
+            let calculator = PrayerTimeCalculator(
+                calculationMethod: shared.loadCalculationMethod(),
+                asrMethod: shared.loadAsrMethod()
+            )
+            let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location)
+            dailyPrayers = tomorrowPrayers
+            shared.savePrayerTimes(tomorrowPrayers)
+        }
+        
+        return dailyPrayers
     }
 }
 
