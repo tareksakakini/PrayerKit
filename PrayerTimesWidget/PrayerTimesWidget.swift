@@ -64,12 +64,14 @@ struct PrayerTimesWidgetEntryView: View {
                             HStack(spacing: 4) {
                                 Text(nextPrayer.name.rawValue)
                                     .foregroundColor(gold)
+                                Text("in")
+                                    .foregroundColor(.white.opacity(0.7))
                                 Text(nextPrayer.time, style: .timer)
                                     .monospacedDigit()
-                                    .multilineTextAlignment(.trailing)
-                                    .frame(minWidth: 56, alignment: .trailing)
+                                    .frame(width: 56, alignment: .trailing)
                                     .foregroundColor(.white.opacity(0.7))
                             }
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                             .font(.system(size: 11, weight: .semibold, design: .rounded))
                         }
                     }
