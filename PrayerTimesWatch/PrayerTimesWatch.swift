@@ -27,16 +27,12 @@ struct NextPrayerComplicationView: View {
     @Environment(\.widgetFamily) private var family
     let entry: PrayerKitEntry
 
-    private var display: (title: String, detail: String) {
-        guard let next = entry.nextPrayer,
-              let timeUntil = entry.timeUntil else {
-            return ("No upcoming", "Open app")
-        }
-        return (next.name.rawValue, "in \(timeUntil)")
+    private var fallbackDisplay: (title: String, detail: String) {
+        ("No upcoming", "Open app")
     }
 
     private var cornerTitle: String {
-        guard let next = entry.nextPrayer else { return display.title }
+        guard let next = entry.nextPrayer else { return fallbackDisplay.title }
         switch next.name {
         case .fajr:
             return "Fjr"
@@ -86,14 +82,14 @@ struct NextPrayerComplicationView: View {
                 .widgetLabel("\(next.name.rawValue)")
             } else {
                 HStack(spacing: 4) {
-                    Text(display.title)
-                    Text(display.detail)
+                    Text(fallbackDisplay.title)
+                    Text(fallbackDisplay.detail)
                         .foregroundColor(.secondary)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .allowsTightening(true)
-                .widgetLabel("\(display.title) \(display.detail)")
+                .widgetLabel("\(fallbackDisplay.title) \(fallbackDisplay.detail)")
             }
 
         case .accessoryCircular:
@@ -113,12 +109,12 @@ struct NextPrayerComplicationView: View {
                             .minimumScaleFactor(0.5)
                             .allowsTightening(true)
                     } else {
-                        Text(display.title)
+                        Text(fallbackDisplay.title)
                             .font(.system(size: 9, weight: .semibold))
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
                             .allowsTightening(true)
-                        Text(display.detail)
+                        Text(fallbackDisplay.detail)
                             .font(.system(size: 7, weight: .regular))
                             .foregroundColor(.secondary)
                             .lineLimit(1)
@@ -129,27 +125,39 @@ struct NextPrayerComplicationView: View {
                 .multilineTextAlignment(.center)
             }
             .widgetLabel {
-                Text("\(display.title) \(display.detail)")
+                if let next = entry.nextPrayer {
+                    Text(next.time, style: .timer)
+                } else {
+                    Text("\(fallbackDisplay.title) \(fallbackDisplay.detail)")
+                }
             }
 
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 2) {
-                Text(display.title)
-                    .font(.system(size: 14, weight: .semibold))
                 if let next = entry.nextPrayer {
+                    Text(next.name.rawValue)
+                        .font(.system(size: 14, weight: .semibold))
                     Text(next.time, style: .timer)
                         .font(.system(size: 11, weight: .regular))
                         .foregroundColor(.secondary)
                 } else {
-                    Text(display.detail)
+                    Text(fallbackDisplay.title)
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(fallbackDisplay.detail)
                         .font(.system(size: 11, weight: .regular))
                         .foregroundColor(.secondary)
                 }
             }
-            .widgetLabel("\(display.title) \(display.detail)")
+            .widgetLabel {
+                if let next = entry.nextPrayer {
+                    Text(next.time, style: .timer)
+                } else {
+                    Text("\(fallbackDisplay.title) \(fallbackDisplay.detail)")
+                }
+            }
 
         case .accessoryCorner:
-            if entry.nextPrayer != nil, entry.timeUntil != nil {
+            if let next = entry.nextPrayer {
                 Text(cornerTitle)
                     .font(.system(.title3, design: .rounded).weight(.black))
                     .foregroundStyle(prayerColor)
@@ -157,7 +165,7 @@ struct NextPrayerComplicationView: View {
                     .minimumScaleFactor(0.55)
                     .widgetCurvesContent()
                 .widgetLabel {
-                    Text(display.detail)
+                    Text(next.time, style: .timer)
                 }
             } else {
                 Image(systemName: "moon.stars.fill")
@@ -169,7 +177,14 @@ struct NextPrayerComplicationView: View {
             }
 
         default:
-            Text("\(display.title) \(display.detail)")
+            if let next = entry.nextPrayer {
+                HStack(spacing: 4) {
+                    Text(next.name.rawValue)
+                    Text(next.time, style: .timer)
+                }
+            } else {
+                Text("\(fallbackDisplay.title) \(fallbackDisplay.detail)")
+            }
         }
     }
 }
