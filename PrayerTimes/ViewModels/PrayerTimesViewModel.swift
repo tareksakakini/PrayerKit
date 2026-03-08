@@ -131,11 +131,13 @@ class PrayerTimesViewModel: ObservableObject {
     private func saveCalculationMethod() {
         UserDefaults.standard.set(calculationMethod.rawValue, forKey: calculationMethodKey)
         SharedDataManager.shared.saveCalculationMethod(calculationMethod)
+        WatchConnectivityManager.shared.syncToWatch()
     }
     
     private func saveAsrMethod() {
         UserDefaults.standard.set(asrMethod.rawValue, forKey: asrMethodKey)
         SharedDataManager.shared.saveAsrMethod(asrMethod)
+        WatchConnectivityManager.shared.syncToWatch()
     }
     
     private func setupBindings() {

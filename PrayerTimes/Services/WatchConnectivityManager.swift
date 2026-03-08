@@ -27,11 +27,13 @@ final class WatchConnectivityManager: NSObject {
     func syncToWatch() {
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
+            print("⚠️ WatchConnectivityManager: Session not ready for sync")
             return
         }
         
         let shared = SharedDataManager.shared
-        guard let userDefaults = shared.isAppGroupAvailable() ? UserDefaults(suiteName: appGroupIdentifier) : nil else {
+        guard shared.isAppGroupAvailable() else {
+            print("⚠️ WatchConnectivityManager: App Group unavailable, cannot sync")
             return
         }
         
@@ -47,23 +49,40 @@ final class WatchConnectivityManager: NSObject {
         userInfo["cityName"] = shared.loadCityName()
         userInfo["calculationMethod"] = shared.loadCalculationMethod().rawValue
         userInfo["asrMethod"] = shared.loadAsrMethod().rawValue
+        userInfo["payloadVersion"] = Date().timeIntervalSince1970
         
         // Prayer times
-        if let prayers = shared.loadPrayerTimes(),
-           let encoded = try? JSONEncoder().encode(prayers) {
-            userInfo["dailyPrayers"] = encoded
+        if let prayers = shared.loadPrayerTimes() {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            if let encoded = try? encoder.encode(prayers) {
+                userInfo["dailyPrayers"] = encoded
+            } else {
+                print("⚠️ WatchConnectivityManager: Failed to encode daily prayers")
+            }
         }
         
         guard !userInfo.isEmpty else { return }
         
         // transferUserInfo: guaranteed delivery, queued if Watch is asleep
-        session.transferUserInfo(userInfo)
+        let transfer = session.transferUserInfo(userInfo)
+        print("✅ WatchConnectivityManager: Queued transferUserInfo (\(transfer))")
         
         // updateApplicationContext: immediate state when Watch wakes (replaces previous)
-        try? session.updateApplicationContext(userInfo)
+        do {
+            try session.updateApplicationContext(userInfo)
+            print("✅ WatchConnectivityManager: Updated application context")
+        } catch {
+            print("⚠️ WatchConnectivityManager: Failed updateApplicationContext: \(error.localizedDescription)")
+        }
         
         // transferCurrentComplicationUserInfo: high priority for complication updates
-        session.transferCurrentComplicationUserInfo(userInfo)
+        if session.remainingComplicationUserInfoTransfers > 0 {
+            let complicationTransfer = session.transferCurrentComplicationUserInfo(userInfo)
+            print("✅ WatchConnectivityManager: Queued complication transfer (\(complicationTransfer))")
+        } else {
+            print("⚠️ WatchConnectivityManager: Complication transfer budget exhausted")
+        }
     }
 }
 

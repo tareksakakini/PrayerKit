@@ -61,6 +61,8 @@ class LocationManager: NSObject, ObservableObject {
                     
                     // Save to shared storage for widget
                     SharedDataManager.shared.saveCityName(self?.cityName ?? "Unknown")
+                    // Push city updates after reverse geocode finishes.
+                    WatchConnectivityManager.shared.syncToWatch()
                 }
             }
         }
@@ -127,4 +129,3 @@ extension LocationManager: CLLocationManagerDelegate {
         }
     }
 }
-

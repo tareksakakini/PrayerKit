@@ -138,8 +138,30 @@ class SharedDataManager {
         guard let userDefaults = userDefaults else { return "Unknown" }
         return userDefaults.string(forKey: "cityName") ?? "Unknown"
     }
+    
+    // MARK: - Sync Metadata
+    
+    func saveLastWatchSyncAt(_ date: Date) {
+        guard let userDefaults = userDefaults else { return }
+        userDefaults.set(date, forKey: "lastWatchSyncAt")
+    }
+    
+    func loadLastWatchSyncAt() -> Date? {
+        guard let userDefaults = userDefaults else { return nil }
+        return userDefaults.object(forKey: "lastWatchSyncAt") as? Date
+    }
+    
+    func saveLastPayloadVersion(_ version: Double) {
+        guard let userDefaults = userDefaults else { return }
+        userDefaults.set(version, forKey: "lastPayloadVersion")
+    }
+    
+    func loadLastPayloadVersion() -> Double? {
+        guard let userDefaults = userDefaults else { return nil }
+        let value = userDefaults.double(forKey: "lastPayloadVersion")
+        return value > 0 ? value : nil
+    }
 }
 
 // MARK: - Codable Extensions
 // Note: Codable conformance is now in Prayer.swift file
-

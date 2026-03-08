@@ -60,11 +60,14 @@ struct PrayerTimesWidgetEntryView: View {
                         
                         Spacer()
                         
-                        if let nextPrayer = entry.nextPrayer, let timeUntil = entry.timeUntil {
+                        if let nextPrayer = entry.nextPrayer {
                             HStack(spacing: 4) {
                                 Text(nextPrayer.name.rawValue)
                                     .foregroundColor(gold)
-                                Text("in \(timeUntil)")
+                                Text(nextPrayer.time, style: .timer)
+                                    .monospacedDigit()
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(minWidth: 56, alignment: .trailing)
                                     .foregroundColor(.white.opacity(0.7))
                             }
                             .font(.system(size: 11, weight: .semibold, design: .rounded))
