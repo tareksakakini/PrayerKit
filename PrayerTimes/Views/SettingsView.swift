@@ -35,7 +35,7 @@ struct SettingsView: View {
                                 Divider()
                                     .background(Color.white.opacity(0.1))
                                     .padding(.leading, 20)
-                                offsetPickerRow
+                                reminderLeadPickerRow
                                 Divider()
                                     .background(Color.white.opacity(0.1))
                                     .padding(.leading, 20)
@@ -321,18 +321,18 @@ struct SettingsView: View {
         }
     }
 
-    private var offsetPickerRow: some View {
+    private var reminderLeadPickerRow: some View {
         HStack {
-            Text("Alert Timing")
+            Text("Upcoming Reminder")
                 .font(.system(size: 16, weight: .regular, design: .rounded))
                 .foregroundColor(.white)
 
             Spacer()
 
-            Picker("Alert Timing", selection: $viewModel.notificationOffsetMinutes) {
-                ForEach(viewModel.notificationOffsetOptions, id: \.self) { offset in
-                    Text(offsetLabel(offset))
-                        .tag(offset)
+            Picker("Upcoming Reminder", selection: $viewModel.reminderLeadMinutes) {
+                ForEach(viewModel.reminderLeadOptions, id: \.self) { minutes in
+                    Text("\(minutes) min before")
+                        .tag(minutes)
                 }
             }
             .pickerStyle(.menu)
@@ -385,26 +385,36 @@ struct SettingsView: View {
 
             Spacer()
 
-            Toggle("", isOn: Binding(
-                get: { viewModel.isPrayerNotificationEnabled(prayer) },
-                set: { viewModel.setPrayerNotificationEnabled($0, for: prayer) }
-            ))
-            .labelsHidden()
-            .tint(Color(red: 0.85, green: 0.75, blue: 0.55))
-            .disabled(!viewModel.notificationsEnabled)
+            VStack(alignment: .trailing, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text("At time")
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.75))
+                    Toggle("", isOn: Binding(
+                        get: { viewModel.isAtPrayerNotificationEnabled(prayer) },
+                        set: { viewModel.setAtPrayerNotificationEnabled($0, for: prayer) }
+                    ))
+                    .labelsHidden()
+                    .tint(Color(red: 0.85, green: 0.75, blue: 0.55))
+                    .disabled(!viewModel.notificationsEnabled)
+                }
+
+                HStack(spacing: 8) {
+                    Text("Reminder")
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.75))
+                    Toggle("", isOn: Binding(
+                        get: { viewModel.isUpcomingReminderEnabled(prayer) },
+                        set: { viewModel.setUpcomingReminderEnabled($0, for: prayer) }
+                    ))
+                    .labelsHidden()
+                    .tint(Color(red: 0.85, green: 0.75, blue: 0.55))
+                    .disabled(!viewModel.notificationsEnabled)
+                }
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
-    }
-
-    private func offsetLabel(_ offset: Int) -> String {
-        if offset == 0 {
-            return "On time"
-        }
-        if offset < 0 {
-            return "\(abs(offset)) min before"
-        }
-        return "\(offset) min after"
     }
 
     private func toggleSection(_ section: SettingsSection, isExpanded: Bool) {

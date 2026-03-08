@@ -40,8 +40,9 @@ final class NotificationManager: NSObject {
 
     func scheduleNotifications(
         for dailyPrayers: [DailyPrayers],
-        offsetMinutes: Int,
-        enabledPrayerNames: Set<PrayerName>
+        atPrayerEnabledNames: Set<PrayerName>,
+        reminderEnabledNames: Set<PrayerName>,
+        reminderLeadMinutes: Int
     ) {
         authorizationStatus { [weak self] status in
             guard let self else { return }
@@ -53,8 +54,21 @@ final class NotificationManager: NSObject {
 
             self.removePendingPrayerRequests {
                 for day in dailyPrayers {
-                    for prayer in day.prayers where enabledPrayerNames.contains(prayer.name) {
-                        self.scheduleSingleNotification(for: prayer, offsetMinutes: offsetMinutes)
+                    for prayer in day.prayers {
+                        if atPrayerEnabledNames.contains(prayer.name) {
+                            self.scheduleSingleNotification(
+                                for: prayer,
+                                offsetMinutes: 0,
+                                kind: "at_time"
+                            )
+                        }
+                        if reminderEnabledNames.contains(prayer.name) {
+                            self.scheduleSingleNotification(
+                                for: prayer,
+                                offsetMinutes: -abs(reminderLeadMinutes),
+                                kind: "reminder"
+                            )
+                        }
                     }
                 }
             }
@@ -104,7 +118,7 @@ final class NotificationManager: NSObject {
         }
     }
 
-    private func scheduleSingleNotification(for prayer: Prayer, offsetMinutes: Int) {
+    private func scheduleSingleNotification(for prayer: Prayer, offsetMinutes: Int, kind: String) {
         let triggerDate = prayer.time.addingTimeInterval(TimeInterval(offsetMinutes * 60))
         guard triggerDate > DateProvider.now() else { return }
 
@@ -119,7 +133,7 @@ final class NotificationManager: NSObject {
         )
         let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
 
-        let identifier = "\(requestPrefix)\(prayer.name.rawValue.lowercased())_\(Int(triggerDate.timeIntervalSince1970))"
+        let identifier = "\(requestPrefix)\(prayer.name.rawValue.lowercased())_\(kind)_\(Int(triggerDate.timeIntervalSince1970))"
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
         center.add(request) { error in
