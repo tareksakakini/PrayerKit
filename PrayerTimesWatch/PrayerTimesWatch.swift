@@ -6,7 +6,7 @@ struct NextPrayerComplication: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind,
-                            provider: PrayerTimesTimelineProvider()) { entry in
+                            provider: PrayerKitTimelineProvider()) { entry in
             NextPrayerComplicationView(entry: entry)
                 .containerBackground(for: .widget) {
                     Color.clear
@@ -25,7 +25,7 @@ struct NextPrayerComplication: Widget {
 
 struct NextPrayerComplicationView: View {
     @Environment(\.widgetFamily) private var family
-    let entry: PrayerTimesEntry
+    let entry: PrayerKitEntry
 
     private var display: (title: String, detail: String) {
         guard let next = entry.nextPrayer,

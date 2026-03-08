@@ -9,7 +9,7 @@ import Foundation
 import CoreLocation
 
 // App Group identifier - must match what's configured in Xcode App Groups capability
-let appGroupIdentifier = "group.tektechinc.PrayerTimes.shared"
+let appGroupIdentifier = "group.tektechinc.PrayerKit.shared"
 
 class SharedDataManager {
     static let shared = SharedDataManager()

@@ -10,7 +10,7 @@ import UIKit
 import UserNotifications
 
 struct SettingsView: View {
-    @ObservedObject var viewModel: PrayerTimesViewModel
+    @ObservedObject var viewModel: PrayerKitViewModel
     @Environment(\.dismiss) var dismiss
     @State private var expandedSections: Set<SettingsSection> = []
     @State private var showCalculationInfo = false
@@ -420,6 +420,6 @@ struct SettingsView: View {
 
 #if DEBUG && targetEnvironment(simulator)
 #Preview {
-    SettingsView(viewModel: PrayerTimesViewModel(locationManager: LocationManager()))
+    SettingsView(viewModel: PrayerKitViewModel(locationManager: LocationManager()))
 }
 #endif

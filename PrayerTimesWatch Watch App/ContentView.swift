@@ -70,7 +70,7 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(cityName.isEmpty ? "Prayer Times" : cityName)
+        .navigationTitle(cityName.isEmpty ? "Prayer Kit" : cityName)
         .onAppear {
             loadData()
         }

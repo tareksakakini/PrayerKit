@@ -1,6 +1,6 @@
 //
-//  PrayerTimesWidgetTimelineProvider.swift
-//  PrayerTimesWidget
+//  PrayerKitWidgetTimelineProvider.swift
+//  PrayerKitWidget
 //
 //  Created by Tarek Sakakini on 11/24/25.
 //
@@ -9,7 +9,7 @@ import WidgetKit
 import SwiftUI
 import CoreLocation
 
-struct PrayerTimesEntry: TimelineEntry {
+struct PrayerKitEntry: TimelineEntry {
     let date: Date
     let prayers: DailyPrayers?
     let nextPrayer: Prayer?
@@ -19,15 +19,15 @@ struct PrayerTimesEntry: TimelineEntry {
     let hijriDate: String
 }
 
-struct PrayerTimesTimelineProvider: TimelineProvider {
-    typealias Entry = PrayerTimesEntry
+struct PrayerKitTimelineProvider: TimelineProvider {
+    typealias Entry = PrayerKitEntry
     
     private let timelineHorizonHours = 24
     private let staleSyncThresholdHours = 12
     
-    func placeholder(in context: Context) -> PrayerTimesEntry {
+    func placeholder(in context: Context) -> PrayerKitEntry {
         let samplePrayers = createSamplePrayers()
-        return PrayerTimesEntry(
+        return PrayerKitEntry(
             date: DateProvider.now(),
             prayers: samplePrayers,
             nextPrayer: samplePrayers.nextPrayer,
@@ -38,7 +38,7 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         )
     }
     
-    func getSnapshot(in context: Context, completion: @escaping (PrayerTimesEntry) -> Void) {
+    func getSnapshot(in context: Context, completion: @escaping (PrayerKitEntry) -> Void) {
         #if os(watchOS)
         WatchConnectivityReceiver.shared.activate()
         #endif
@@ -46,7 +46,7 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         completion(entry)
     }
     
-    func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerTimesEntry>) -> Void) {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerKitEntry>) -> Void) {
         #if os(watchOS)
         WatchConnectivityReceiver.shared.activate()
         #endif
@@ -84,7 +84,7 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         calendar.date(bySetting: .second, value: 0, of: date) ?? date
     }
     
-    private func createEntry(for date: Date) -> PrayerTimesEntry {
+    private func createEntry(for date: Date) -> PrayerKitEntry {
         let sharedData = SharedDataManager.shared
         let cityName = sharedData.loadCityName()
         let location = sharedData.loadLocation()
@@ -108,10 +108,10 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
             if let lastSyncAt = sharedData.loadLastWatchSyncAt() {
                 let ageHours = date.timeIntervalSince(lastSyncAt) / 3600
                 if ageHours > Double(staleSyncThresholdHours) {
-                    print("⚠️ PrayerTimesTimelineProvider: Watch data is stale (\(Int(ageHours))h old)")
+                    print("⚠️ PrayerKitTimelineProvider: Watch data is stale (\(Int(ageHours))h old)")
                 }
             } else {
-                print("⚠️ PrayerTimesTimelineProvider: Missing watch sync metadata")
+                print("⚠️ PrayerKitTimelineProvider: Missing watch sync metadata")
             }
         }
         
@@ -138,7 +138,7 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         hijriFormatter.dateFormat = "d MMMM yyyy"
         let hijriDate = hijriFormatter.string(from: date) + " AH"
         
-        return PrayerTimesEntry(
+        return PrayerKitEntry(
             date: date,
             prayers: dailyPrayers,
             nextPrayer: nextPrayer,

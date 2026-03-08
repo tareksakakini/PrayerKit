@@ -10,14 +10,14 @@ import UIKit
 
 struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
-    @StateObject private var viewModel: PrayerTimesViewModel
+    @StateObject private var viewModel: PrayerKitViewModel
     @State private var showSettings = false
     @Environment(\.scenePhase) private var scenePhase
     
     init() {
         let locManager = LocationManager()
         _locationManager = StateObject(wrappedValue: locManager)
-        _viewModel = StateObject(wrappedValue: PrayerTimesViewModel(locationManager: locManager))
+        _viewModel = StateObject(wrappedValue: PrayerKitViewModel(locationManager: locManager))
     }
     
     var body: some View {

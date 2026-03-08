@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.tektechinc.PrayerTimes.shared</string>
+		<string>group.tektechinc.PrayerKit.shared</string>
 	</array>
 </dict>
 </plist>

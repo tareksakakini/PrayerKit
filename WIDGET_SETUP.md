@@ -9,7 +9,7 @@ This guide will help you add the Widget Extension to your Xcode project.
 3. Select **Widget Extension** under iOS
 4. Click **Next**
 5. Configure:
-   - **Product Name**: `PrayerTimesWidget`
+   - **Product Name**: `PrayerKitWidget`
    - **Organization Identifier**: (same as your main app)
    - **Language**: Swift
    - **Include Configuration Intent**: No (uncheck this)
@@ -24,14 +24,14 @@ Both the main app and widget extension need to share data using App Groups.
 2. Go to **Signing & Capabilities** tab
 3. Click **+ Capability**
 4. Add **App Groups**
-5. Click **+** and add: `group.tektechinc.PrayerTimes.shared`
-6. Repeat for the **PrayerTimesWidget** target:
-   - Select **PrayerTimesWidget** target
+5. Click **+** and add: `group.tektechinc.PrayerKit.shared`
+6. Repeat for the **PrayerKitWidget** target:
+   - Select **PrayerKitWidget** target
    - Go to **Signing & Capabilities** tab
    - Add **App Groups** capability
-   - Add the same group: `group.tektechinc.PrayerTimes.shared`
+   - Add the same group: `group.tektechinc.PrayerKit.shared`
 
-**Important**: The App Group identifier must match your bundle identifier format. For this project, it's `group.tektechinc.PrayerTimes.shared`. If you see errors about the App Group not being available:
+**Important**: The App Group identifier must match your bundle identifier format. For this project, it's `group.tektechinc.PrayerKit.shared`. If you see errors about the App Group not being available:
 - Make sure you're signed in with your Apple Developer account in Xcode
 - The App Group will be automatically created when you add it in Xcode (for development)
 - For production, you may need to register it in the Apple Developer Portal
@@ -47,33 +47,33 @@ The widget extension needs access to your models and services. You need to add t
 
 2. For each file:
    - Open the **File Inspector** (right panel)
-   - Under **Target Membership**, check **PrayerTimesWidget**
+   - Under **Target Membership**, check **PrayerKitWidget**
 
 Alternatively, you can:
 - Select the files
 - Right-click → **Show File Inspector**
-- Under **Target Membership**, check both **PrayerTimes** and **PrayerTimesWidget**
+- Under **Target Membership**, check both **PrayerTimes** and **PrayerKitWidget**
 
 ## Step 4: Replace Default Widget Files
 
-The widget extension target will create default files. Replace them with the files in the `PrayerTimesWidget` folder:
+The widget extension target will create default files. Replace them with the files in the `PrayerKitWidget` folder:
 
 1. Delete the default widget files created by Xcode (if any)
 2. The following files should already be in place:
-   - `PrayerTimesWidget/PrayerTimesWidget.swift`
-   - `PrayerTimesWidget/PrayerTimesWidgetTimelineProvider.swift`
-   - `PrayerTimesWidget/PrayerTimesWidgetBundle.swift`
-   - `PrayerTimesWidget/Info.plist`
+   - `PrayerKitWidget/PrayerKitWidget.swift`
+   - `PrayerKitWidget/PrayerKitWidgetTimelineProvider.swift`
+   - `PrayerKitWidget/PrayerKitWidgetBundle.swift`
+   - `PrayerKitWidget/Info.plist`
 
 ## Step 5: Update Bundle Identifier
 
 Make sure the widget extension has a proper bundle identifier:
-- It should be: `com.yourcompany.PrayerTimes.PrayerTimesWidget` (or similar)
+- It should be: `com.yourcompany.PrayerTimes.PrayerKitWidget` (or similar)
 - Check in **Build Settings** → **Product Bundle Identifier**
 
 ## Step 6: Build and Run
 
-1. Select the **PrayerTimesWidget** scheme
+1. Select the **PrayerKitWidget** scheme
 2. Build the project (⌘B)
 3. If there are any import errors, make sure the shared files are added to the widget target (Step 3)
 
@@ -83,7 +83,7 @@ Make sure the widget extension has a proper bundle identifier:
 2. Go to the home screen
 3. Long press on an empty area
 4. Tap the **+** button in the top-left
-5. Search for "Prayer Times"
+5. Search for "Prayer Kit"
 6. Add the widget to your home screen
 
 ## Troubleshooting

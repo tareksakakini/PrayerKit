@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <device id="retina6_12" orientation="portrait" appearance="dark"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="EHf-IW-A2E">
+            <objects>
+                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="f3W-pB-Um4">
+                                <rect key="frame" x="106.66666666666667" y="344" width="180" height="164"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Prayer Kit" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="K4M-iq-eJg">
+                                        <rect key="frame" x="0.0" y="58" width="180" height="43"/>
+                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="36"/>
+                                        <color key="textColor" red="0.95686274510000004" green="0.94901960780000003" blue="0.92549019610000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="مواقيت الصلاة" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="Oiw-GD-nTL">
+                                        <rect key="frame" x="0.0" y="108" width="180" height="31"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="24"/>
+                                        <color key="textColor" red="0.85098039219999995" green="0.7490196078" blue="0.54901960780000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="moon.stars.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="U8x-mW-IqM">
+                                        <rect key="frame" x="71" y="0.0" width="38.333333333333343" height="44"/>
+                                        <color key="tintColor" red="0.85098039219999995" green="0.7490196078" blue="0.54901960780000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                    </imageView>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="U8x-mW-IqM" firstAttribute="top" secondItem="f3W-pB-Um4" secondAttribute="top" id="3Bp-LE-vPx"/>
+                                    <constraint firstItem="Oiw-GD-nTL" firstAttribute="top" secondItem="K4M-iq-eJg" secondAttribute="bottom" constant="7" id="4Gu-hI-jP1"/>
+                                    <constraint firstAttribute="trailing" secondItem="K4M-iq-eJg" secondAttribute="trailing" id="A6z-XE-kca"/>
+                                    <constraint firstAttribute="trailing" secondItem="Oiw-GD-nTL" secondAttribute="trailing" id="MSQ-rT-dYL"/>
+                                    <constraint firstItem="Oiw-GD-nTL" firstAttribute="leading" secondItem="f3W-pB-Um4" secondAttribute="leading" id="NQE-Va-qxE"/>
+                                    <constraint firstItem="K4M-iq-eJg" firstAttribute="leading" secondItem="f3W-pB-Um4" secondAttribute="leading" id="Vb9-Cf-mc6"/>
+                                    <constraint firstItem="K4M-iq-eJg" firstAttribute="top" secondItem="U8x-mW-IqM" secondAttribute="bottom" constant="14" id="n8g-Mc-48x"/>
+                                    <constraint firstAttribute="bottom" secondItem="Oiw-GD-nTL" secondAttribute="bottom" constant="25" id="ukF-HM-gq7"/>
+                                    <constraint firstItem="U8x-mW-IqM" firstAttribute="centerX" secondItem="f3W-pB-Um4" secondAttribute="centerX" id="xyf-Ug-fjm"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
+                        <color key="backgroundColor" red="0.070588235289999997" green="0.1294117647" blue="0.25882352939999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="f3W-pB-Um4" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="3jw-vh-TZC"/>
+                            <constraint firstItem="f3W-pB-Um4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="ckW-Mq-9xT"/>
+                            <constraint firstItem="f3W-pB-Um4" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Bcu-3y-fUS" secondAttribute="leading" constant="24" id="i4G-cw-gdi"/>
+                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="f3W-pB-Um4" secondAttribute="trailing" constant="24" id="z8i-1R-z0T"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="42.748091603053433" y="373.23943661971833"/>
+        </scene>
+    </scenes>
+</document>

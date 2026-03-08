@@ -1,6 +1,6 @@
 //
-//  PrayerTimesWidget.swift
-//  PrayerTimesWidget
+//  PrayerKitWidget.swift
+//  PrayerKitWidget
 //
 //  Created by Tarek Sakakini on 11/24/25.
 //
@@ -8,12 +8,12 @@
 import WidgetKit
 import SwiftUI
 
-struct PrayerTimesWidget: Widget {
-    let kind: String = "PrayerTimesWidget"
+struct PrayerKitWidget: Widget {
+    let kind: String = "PrayerKitWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: PrayerTimesTimelineProvider()) { entry in
-            PrayerTimesWidgetEntryView(entry: entry)
+        StaticConfiguration(kind: kind, provider: PrayerKitTimelineProvider()) { entry in
+            PrayerKitWidgetEntryView(entry: entry)
                 .containerBackground(for: .widget) {
                     LinearGradient(
                         colors: [
@@ -26,14 +26,14 @@ struct PrayerTimesWidget: Widget {
                 }
                 .widgetURL(URL(string: "prayertimes://"))
         }
-        .configurationDisplayName("Prayer Times")
+        .configurationDisplayName("Prayer Kit")
         .description("View today's prayer times at a glance.")
         .supportedFamilies([.systemMedium])
     }
 }
 
-struct PrayerTimesWidgetEntryView: View {
-    var entry: PrayerTimesEntry
+struct PrayerKitWidgetEntryView: View {
+    var entry: PrayerKitEntry
     
     private let gold = Color(red: 0.85, green: 0.75, blue: 0.55)
     
@@ -123,9 +123,9 @@ struct PrayerTimesWidgetEntryView: View {
 }
 
 #Preview(as: .systemMedium) {
-    PrayerTimesWidget()
+    PrayerKitWidget()
 } timeline: {
-    PrayerTimesEntry(
+    PrayerKitEntry(
         date: Date(),
         prayers: nil,
         nextPrayer: nil,
