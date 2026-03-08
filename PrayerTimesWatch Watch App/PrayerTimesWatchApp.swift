@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct PrayerTimesWatch_Watch_AppApp: App {
+struct PrayerKitWatchApp: App {
     init() {
         WatchConnectivityReceiver.shared.activate()
     }

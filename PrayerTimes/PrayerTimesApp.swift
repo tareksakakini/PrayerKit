@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct PrayerTimesApp: App {
+struct PrayerKitApp: App {
     @Environment(\.scenePhase) private var scenePhase
     
     init() {

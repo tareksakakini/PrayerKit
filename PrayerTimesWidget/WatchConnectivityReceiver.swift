@@ -27,7 +27,10 @@ final class WatchConnectivityReceiver: NSObject {
     
     private func applyReceivedData(_ userInfo: [String: Any]) {
         let shared = SharedDataManager.shared
-        guard shared.isAppGroupAvailable() else { return }
+        guard shared.isAppGroupAvailable() else {
+            print("⚠️ WatchConnectivityReceiver: App Group unavailable, dropping payload")
+            return
+        }
         
         // Location
         if let lat = userInfo["latitude"] as? Double, let lon = userInfo["longitude"] as? Double {
@@ -55,10 +58,20 @@ final class WatchConnectivityReceiver: NSObject {
         if let data = userInfo["dailyPrayers"] as? Data {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
-            if let prayers = try? decoder.decode(DailyPrayers.self, from: data) {
+            do {
+                let prayers = try decoder.decode(DailyPrayers.self, from: data)
                 shared.savePrayerTimes(prayers)
+                print("✅ WatchConnectivityReceiver: Decoded and saved prayer times")
+            } catch {
+                print("⚠️ WatchConnectivityReceiver: Failed to decode prayer payload: \(error.localizedDescription)")
             }
         }
+        
+        if let version = userInfo["payloadVersion"] as? Double {
+            shared.saveLastPayloadVersion(version)
+        }
+        shared.saveLastWatchSyncAt(Date())
+        print("✅ WatchConnectivityReceiver: Applied payload and requested timeline reload")
         
         WidgetCenter.shared.reloadAllTimelines()
     }

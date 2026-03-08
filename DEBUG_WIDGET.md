@@ -6,21 +6,21 @@ This means the widget is working, but it's not receiving data from the main app.
 
 ## Step 1: Verify App Groups Configuration
 
-1. **In Xcode, select your PrayerTimes app target**
+1. **In Xcode, select your Prayer Kit app target**
    - Go to **Signing & Capabilities** tab
    - Check if **App Groups** capability is present
-   - Verify it contains: `group.tektechinc.PrayerTimes.shared`
+   - Verify it contains: `group.tektechinc.PrayerKit.shared`
    - If not, click **+ Capability** → **App Groups** → Add the group
 
-2. **Select PrayerTimesWidget target**
+2. **Select PrayerKitWidget target**
    - Go to **Signing & Capabilities** tab
    - Check if **App Groups** capability is present
-   - Verify it contains the **SAME** group: `group.tektechinc.PrayerTimes.shared`
+   - Verify it contains the **SAME** group: `group.tektechinc.PrayerKit.shared`
    - Both targets MUST have the exact same App Group identifier
 
 ## Step 2: Run the Main App First
 
-1. **Build and run the PrayerTimes app** (not the widget)
+1. **Build and run the Prayer Kit app** (not the widget)
 2. **Allow location permission** when prompted
 3. **Wait for prayer times to load** in the app
 4. Check the Xcode console for these messages:
@@ -39,7 +39,7 @@ After running the app, check the Xcode console for:
 
 1. After the app has run and saved data:
 2. Go to home screen
-3. Long press → Add widget → Prayer Times
+3. Long press → Add widget → Prayer Kit
 4. The widget should now show prayer times
 
 If it still shows "Open app to set location":
@@ -64,7 +64,7 @@ print("Prayer times saved: \(shared.loadPrayerTimes() != nil)")
 ### Issue: "App Group not available" in console
 **Solution**: App Groups capability is not configured correctly. Make sure:
 - Both targets have the capability
-- The identifier matches exactly: `group.tektechinc.PrayerTimes.shared`
+- The identifier matches exactly: `group.tektechinc.PrayerKit.shared`
 - You're signed in with your Apple Developer account
 
 ### Issue: Location is saved but widget doesn't show it
@@ -86,19 +86,19 @@ print("Prayer times saved: \(shared.loadPrayerTimes() != nil)")
 
 ### Testing Order (Must Run on Physical Devices)
 
-1. **Run the main PrayerTimes app on your iPhone**
+1. **Run the main Prayer Kit app on your iPhone**
    - Allow location permission
    - Wait for prayer times to load (you should see Fajr, Dhuhr, etc.)
    - This sends data to the Watch via WatchConnectivity
 
-2. **Open the Prayer Times Watch app on your Apple Watch**
+2. **Open the Prayer Kit Watch app on your Apple Watch**
    - This activates the WatchConnectivity session
    - Data should sync from the iPhone
    - You should see prayer times instead of "Open iPhone app"
 
 3. **Add the complication to your watch face**
    - Long press on watch face → Edit → Add complication
-   - Choose "Next Prayer" under Prayer Times
+   - Choose "Next Prayer" under Prayer Kit
    - It should show "Fajr in Xh Xm" (or the next prayer)
 
 ### Simulator vs Physical Device

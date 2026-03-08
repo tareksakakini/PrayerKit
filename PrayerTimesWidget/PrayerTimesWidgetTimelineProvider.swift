@@ -1,6 +1,6 @@
 //
-//  PrayerTimesWidgetTimelineProvider.swift
-//  PrayerTimesWidget
+//  PrayerKitWidgetTimelineProvider.swift
+//  PrayerKitWidget
 //
 //  Created by Tarek Sakakini on 11/24/25.
 //
@@ -9,7 +9,7 @@ import WidgetKit
 import SwiftUI
 import CoreLocation
 
-struct PrayerTimesEntry: TimelineEntry {
+struct PrayerKitEntry: TimelineEntry {
     let date: Date
     let prayers: DailyPrayers?
     let nextPrayer: Prayer?
@@ -19,12 +19,15 @@ struct PrayerTimesEntry: TimelineEntry {
     let hijriDate: String
 }
 
-struct PrayerTimesTimelineProvider: TimelineProvider {
-    typealias Entry = PrayerTimesEntry
+struct PrayerKitTimelineProvider: TimelineProvider {
+    typealias Entry = PrayerKitEntry
     
-    func placeholder(in context: Context) -> PrayerTimesEntry {
+    private let timelineHorizonHours = 24
+    private let staleSyncThresholdHours = 12
+    
+    func placeholder(in context: Context) -> PrayerKitEntry {
         let samplePrayers = createSamplePrayers()
-        return PrayerTimesEntry(
+        return PrayerKitEntry(
             date: DateProvider.now(),
             prayers: samplePrayers,
             nextPrayer: samplePrayers.nextPrayer,
@@ -35,7 +38,7 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         )
     }
     
-    func getSnapshot(in context: Context, completion: @escaping (PrayerTimesEntry) -> Void) {
+    func getSnapshot(in context: Context, completion: @escaping (PrayerKitEntry) -> Void) {
         #if os(watchOS)
         WatchConnectivityReceiver.shared.activate()
         #endif
@@ -43,28 +46,36 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         completion(entry)
     }
     
-    func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerTimesEntry>) -> Void) {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerKitEntry>) -> Void) {
         #if os(watchOS)
         WatchConnectivityReceiver.shared.activate()
         #endif
         let currentDate = DateProvider.now()
         let calendar = Calendar.current
+        let startDate = startOfMinute(for: currentDate, calendar: calendar)
+        let horizonEnd = calendar.date(byAdding: .hour, value: timelineHorizonHours, to: startDate) ?? startDate.addingTimeInterval(24 * 3600)
+        var entryDates = Set<Date>([startDate])
         
-        // Create an entry for each minute boundary so the countdown updates in sync with the clock
-        var entries: [PrayerTimesEntry] = []
-        let maxEntries = 100
-        var entryDate = startOfMinute(for: currentDate, calendar: calendar)
-        
-        for _ in 0..<maxEntries {
-            let entry = createEntry(for: entryDate)
-            entries.append(entry)
-            // Move to next minute boundary
-            guard let nextMinute = calendar.date(byAdding: .minute, value: 1, to: entryDate) else { break }
-            entryDate = nextMinute
+        if let location = SharedDataManager.shared.loadLocation() {
+            let method = SharedDataManager.shared.loadCalculationMethod()
+            let asrMethod = SharedDataManager.shared.loadAsrMethod()
+            let calculator = PrayerTimeCalculator(calculationMethod: method, asrMethod: asrMethod)
+            
+            for dayOffset in 0...2 {
+                guard let day = calendar.date(byAdding: .day, value: dayOffset, to: startDate) else { continue }
+                let daily = calculator.calculatePrayerTimes(for: day, at: location)
+                daily.prayers
+                    .map(\.time)
+                    .filter { $0 > startDate && $0 <= horizonEnd }
+                    .forEach { entryDates.insert(startOfMinute(for: $0, calendar: calendar)) }
+            }
+        } else if let fallbackDate = calendar.date(byAdding: .minute, value: 30, to: startDate) {
+            entryDates.insert(fallbackDate)
         }
         
-        // Request next timeline refresh after our last entry
-        let nextUpdateDate = entryDate
+        let sortedDates = entryDates.sorted()
+        let entries = sortedDates.map(createEntry(for:))
+        let nextUpdateDate = horizonEnd
         let timeline = Timeline(entries: entries, policy: .after(nextUpdateDate))
         completion(timeline)
     }
@@ -73,36 +84,40 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         calendar.date(bySetting: .second, value: 0, of: date) ?? date
     }
     
-    private func createEntry(for date: Date) -> PrayerTimesEntry {
+    private func createEntry(for date: Date) -> PrayerKitEntry {
         let sharedData = SharedDataManager.shared
-        
-        var dailyPrayers = sharedData.loadPrayerTimes()
         let cityName = sharedData.loadCityName()
         let location = sharedData.loadLocation()
+        let calculationMethod = sharedData.loadCalculationMethod()
+        let asrMethod = sharedData.loadAsrMethod()
         
         let calendar = Calendar.current
-        if dailyPrayers == nil || !calendar.isDate(dailyPrayers!.date, inSameDayAs: date) {
-            if let location = location {
-                let calculationMethod = sharedData.loadCalculationMethod()
-                let asrMethod = sharedData.loadAsrMethod()
-                
-                let calculator = PrayerTimeCalculator(
-                    calculationMethod: calculationMethod,
-                    asrMethod: asrMethod
-                )
-                dailyPrayers = calculator.calculatePrayerTimes(for: date, at: location)
-                
-                if let prayers = dailyPrayers {
-                    sharedData.savePrayerTimes(prayers)
+        var dailyPrayers: DailyPrayers?
+        
+        if let location = location {
+            let calculator = PrayerTimeCalculator(
+                calculationMethod: calculationMethod,
+                asrMethod: asrMethod
+            )
+            dailyPrayers = calculator.calculatePrayerTimes(for: date, at: location)
+            if let prayers = dailyPrayers {
+                sharedData.savePrayerTimes(prayers)
+            }
+        } else {
+            dailyPrayers = sharedData.loadPrayerTimes()
+            if let lastSyncAt = sharedData.loadLastWatchSyncAt() {
+                let ageHours = date.timeIntervalSince(lastSyncAt) / 3600
+                if ageHours > Double(staleSyncThresholdHours) {
+                    print("⚠️ PrayerKitTimelineProvider: Watch data is stale (\(Int(ageHours))h old)")
                 }
+            } else {
+                print("⚠️ PrayerKitTimelineProvider: Missing watch sync metadata")
             }
         }
         
         var nextPrayer = nextPrayerRelative(to: date, prayers: dailyPrayers?.prayers)
         // After last prayer (e.g. Isha), use tomorrow's prayers
         if nextPrayer == nil, let location = location, let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
-            let calculationMethod = sharedData.loadCalculationMethod()
-            let asrMethod = sharedData.loadAsrMethod()
             let calculator = PrayerTimeCalculator(
                 calculationMethod: calculationMethod,
                 asrMethod: asrMethod
@@ -123,7 +138,7 @@ struct PrayerTimesTimelineProvider: TimelineProvider {
         hijriFormatter.dateFormat = "d MMMM yyyy"
         let hijriDate = hijriFormatter.string(from: date) + " AH"
         
-        return PrayerTimesEntry(
+        return PrayerKitEntry(
             date: date,
             prayers: dailyPrayers,
             nextPrayer: nextPrayer,

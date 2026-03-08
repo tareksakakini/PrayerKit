@@ -104,34 +104,55 @@ class PrayerTimeCalculator {
         let baseDate = calendar.startOfDay(for: date)
         
         if let fajrTime = times.fajr {
-            prayers.append(Prayer(name: .fajr, time: addHours(fajrTime, to: baseDate)))
+            prayers.append(Prayer(name: .fajr, time: addHours(fajrTime, on: date, calendar: calendar, fallbackDate: baseDate)))
         }
         
         if let sunriseTime = times.sunrise {
-            prayers.append(Prayer(name: .sunrise, time: addHours(sunriseTime, to: baseDate)))
+            prayers.append(Prayer(name: .sunrise, time: addHours(sunriseTime, on: date, calendar: calendar, fallbackDate: baseDate)))
         }
         
         if let dhuhrTime = times.dhuhr {
-            prayers.append(Prayer(name: .dhuhr, time: addHours(dhuhrTime, to: baseDate)))
+            prayers.append(Prayer(name: .dhuhr, time: addHours(dhuhrTime, on: date, calendar: calendar, fallbackDate: baseDate)))
         }
         
         if let asrTime = times.asr {
-            prayers.append(Prayer(name: .asr, time: addHours(asrTime, to: baseDate)))
+            prayers.append(Prayer(name: .asr, time: addHours(asrTime, on: date, calendar: calendar, fallbackDate: baseDate)))
         }
         
         if let maghribTime = times.maghrib {
-            prayers.append(Prayer(name: .maghrib, time: addHours(maghribTime, to: baseDate)))
+            prayers.append(Prayer(name: .maghrib, time: addHours(maghribTime, on: date, calendar: calendar, fallbackDate: baseDate)))
         }
         
         if let ishaTime = times.isha {
-            prayers.append(Prayer(name: .isha, time: addHours(ishaTime, to: baseDate)))
+            prayers.append(Prayer(name: .isha, time: addHours(ishaTime, on: date, calendar: calendar, fallbackDate: baseDate)))
         }
         
         return DailyPrayers(date: date, prayers: prayers)
     }
     
-    private func addHours(_ hours: Double, to date: Date) -> Date {
-        return date.addingTimeInterval(hours * 3600)
+    private func addHours(_ hours: Double, on date: Date, calendar: Calendar, fallbackDate: Date) -> Date {
+        let dayOffset = Int(floor(hours / 24.0))
+        let normalizedHours = hours - (Double(dayOffset) * 24.0)
+        let hour = Int(floor(normalizedHours))
+        let minuteFraction = (normalizedHours - Double(hour)) * 60.0
+        let minute = Int(floor(minuteFraction))
+        let second = min(59, max(0, Int(round((minuteFraction - Double(minute)) * 60.0))))
+        let targetDay = calendar.date(byAdding: .day, value: dayOffset, to: date) ?? date
+        
+        if let localWallClockDate = calendar.date(
+            bySettingHour: hour,
+            minute: minute,
+            second: second,
+            of: targetDay,
+            matchingPolicy: .nextTimePreservingSmallerComponents,
+            repeatedTimePolicy: .first,
+            direction: .forward
+        ) {
+            return localWallClockDate
+        }
+        
+        // Fallback to interval arithmetic if local wall-clock construction fails.
+        return fallbackDate.addingTimeInterval(hours * 3600)
     }
     
     private struct RawTimes {

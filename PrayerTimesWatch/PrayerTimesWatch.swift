@@ -6,7 +6,7 @@ struct NextPrayerComplication: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind,
-                            provider: PrayerTimesTimelineProvider()) { entry in
+                            provider: PrayerKitTimelineProvider()) { entry in
             NextPrayerComplicationView(entry: entry)
                 .containerBackground(for: .widget) {
                     Color.clear
@@ -25,7 +25,7 @@ struct NextPrayerComplication: Widget {
 
 struct NextPrayerComplicationView: View {
     @Environment(\.widgetFamily) private var family
-    let entry: PrayerTimesEntry
+    let entry: PrayerKitEntry
 
     private var display: (title: String, detail: String) {
         guard let next = entry.nextPrayer,
@@ -33,10 +33,6 @@ struct NextPrayerComplicationView: View {
             return ("No upcoming", "Open app")
         }
         return (next.name.rawValue, "in \(timeUntil)")
-    }
-
-    private var oneLineStatus: String {
-        "\(display.title) \(display.detail)"
     }
 
     private var cornerTitle: String {
@@ -78,31 +74,57 @@ struct NextPrayerComplicationView: View {
     var body: some View {
         switch family {
         case .accessoryInline:
-            HStack(spacing: 4) {
-                Text(display.title)
-                Text(display.detail)
-                    .foregroundColor(.secondary)
+            if let next = entry.nextPrayer {
+                HStack(spacing: 4) {
+                    Text(next.name.rawValue)
+                    Text(next.time, style: .timer)
+                        .foregroundColor(.secondary)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .allowsTightening(true)
+                .widgetLabel("\(next.name.rawValue)")
+            } else {
+                HStack(spacing: 4) {
+                    Text(display.title)
+                    Text(display.detail)
+                        .foregroundColor(.secondary)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .allowsTightening(true)
+                .widgetLabel("\(display.title) \(display.detail)")
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            .allowsTightening(true)
-            .widgetLabel("\(display.title) \(display.detail)")
 
         case .accessoryCircular:
             ZStack {
                 AccessoryWidgetBackground()
                 VStack(spacing: 1) {
-                    Text(display.title)
-                        .font(.system(size: 9, weight: .semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                        .allowsTightening(true)
-                    Text(display.detail)
-                        .font(.system(size: 7, weight: .regular))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                        .allowsTightening(true)
+                    if let next = entry.nextPrayer {
+                        Text(next.name.rawValue)
+                            .font(.system(size: 9, weight: .semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            .allowsTightening(true)
+                        Text(next.time, style: .timer)
+                            .font(.system(size: 7, weight: .regular))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            .allowsTightening(true)
+                    } else {
+                        Text(display.title)
+                            .font(.system(size: 9, weight: .semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            .allowsTightening(true)
+                        Text(display.detail)
+                            .font(.system(size: 7, weight: .regular))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            .allowsTightening(true)
+                    }
                 }
                 .multilineTextAlignment(.center)
             }
@@ -114,9 +136,15 @@ struct NextPrayerComplicationView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(display.title)
                     .font(.system(size: 14, weight: .semibold))
-                Text(display.detail)
-                    .font(.system(size: 11, weight: .regular))
-                    .foregroundColor(.secondary)
+                if let next = entry.nextPrayer {
+                    Text(next.time, style: .timer)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(.secondary)
+                } else {
+                    Text(display.detail)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundColor(.secondary)
+                }
             }
             .widgetLabel("\(display.title) \(display.detail)")
 

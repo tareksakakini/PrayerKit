@@ -68,7 +68,7 @@ final class NotificationManager: NSObject {
             guard canSchedule else { return }
             
             let content = UNMutableNotificationContent()
-            content.title = "PrayerTimes Test"
+            content.title = "Prayer Kit Test"
             content.body = "This is a debug notification."
             content.sound = .default
             

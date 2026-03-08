@@ -1,5 +1,5 @@
 //
-//  PrayerTimesViewModel.swift
+//  PrayerKitViewModel.swift
 //  PrayerTimes
 //
 //  Created by Tarek Sakakini on 11/24/25.
@@ -10,7 +10,7 @@ import CoreLocation
 import Combine
 import UserNotifications
 
-class PrayerTimesViewModel: ObservableObject {
+class PrayerKitViewModel: ObservableObject {
     @Published var dailyPrayers: DailyPrayers?
     @Published var isLoading: Bool = true
     @Published private(set) var countdownTick: Date = Date()
@@ -95,6 +95,7 @@ class PrayerTimesViewModel: ObservableObject {
             guard let self = self else { return }
             DispatchQueue.main.async {
                 self.countdownTick = Date()
+                self.recalculateIfDateOrTimeZoneChanged()
                 // Recalculate when we've passed all prayers (e.g. after Isha) to show tomorrow's Fajr
                 if self.dailyPrayers != nil && self.dailyPrayers?.nextPrayer == nil,
                    let location = self.locationManager.location,
@@ -131,11 +132,13 @@ class PrayerTimesViewModel: ObservableObject {
     private func saveCalculationMethod() {
         UserDefaults.standard.set(calculationMethod.rawValue, forKey: calculationMethodKey)
         SharedDataManager.shared.saveCalculationMethod(calculationMethod)
+        WatchConnectivityManager.shared.syncToWatch()
     }
     
     private func saveAsrMethod() {
         UserDefaults.standard.set(asrMethod.rawValue, forKey: asrMethodKey)
         SharedDataManager.shared.saveAsrMethod(asrMethod)
+        WatchConnectivityManager.shared.syncToWatch()
     }
     
     private func setupBindings() {
@@ -181,9 +184,24 @@ class PrayerTimesViewModel: ObservableObject {
         calculatePrayerTimes(for: location)
     }
     
+    private func recalculateIfDateOrTimeZoneChanged() {
+        guard let currentPrayers = dailyPrayers,
+              let location = locationManager.location else { return }
+        
+        let now = DateProvider.now()
+        let isDifferentDay = !Calendar.current.isDate(currentPrayers.date, inSameDayAs: now)
+        let previousOffset = TimeZone.current.secondsFromGMT(for: currentPrayers.date)
+        let currentOffset = TimeZone.current.secondsFromGMT(for: now)
+        
+        if isDifferentDay || previousOffset != currentOffset {
+            calculatePrayerTimes(for: location, date: now)
+        }
+    }
+    
     func refreshCountdown() {
         countdownTick = Date()
         refreshNotificationAuthorizationStatus()
+        recalculateIfDateOrTimeZoneChanged()
         if dailyPrayers != nil && dailyPrayers?.nextPrayer == nil,
            let location = locationManager.location,
            let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: DateProvider.now()) {

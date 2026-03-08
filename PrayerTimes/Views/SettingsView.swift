@@ -10,47 +10,26 @@ import UIKit
 import UserNotifications
 
 struct SettingsView: View {
-    @ObservedObject var viewModel: PrayerTimesViewModel
+    @ObservedObject var viewModel: PrayerKitViewModel
     @Environment(\.dismiss) var dismiss
-    
+    @State private var expandedSections: Set<SettingsSection> = []
+    @State private var showCalculationInfo = false
+
+    private enum SettingsSection: Hashable {
+        case notifications
+        case calculationMethod
+        case asrCalculation
+    }
+
     var body: some View {
         NavigationView {
             ZStack {
                 // Background gradient
                 backgroundGradient
-                
+
                 ScrollView {
-                    VStack(spacing: 32) {
-                        // Calculation Method Section
-                        settingsSection(title: "Calculation Method") {
-                            VStack(spacing: 0) {
-                                ForEach(Array(CalculationMethod.allCases.enumerated()), id: \.element.id) { index, method in
-                                    methodRow(method: method)
-                                    if index < CalculationMethod.allCases.count - 1 {
-                                        Divider()
-                                            .background(Color.white.opacity(0.1))
-                                            .padding(.leading, 20)
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Asr Method Section
-                        settingsSection(title: "Asr Calculation") {
-                            VStack(spacing: 0) {
-                                ForEach(Array(AsrJuristicMethod.allCases.enumerated()), id: \.element.id) { index, method in
-                                    asrMethodRow(method: method)
-                                    if index < AsrJuristicMethod.allCases.count - 1 {
-                                        Divider()
-                                            .background(Color.white.opacity(0.1))
-                                            .padding(.leading, 20)
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Notifications Section
-                        settingsSection(title: "Notifications") {
+                    VStack(spacing: 20) {
+                        collapsibleSection(title: "Notifications", section: .notifications) {
                             VStack(spacing: 0) {
                                 notificationToggleRow
                                 Divider()
@@ -61,19 +40,19 @@ struct SettingsView: View {
                                     .background(Color.white.opacity(0.1))
                                     .padding(.leading, 20)
                                 debugNotificationRow
-                                
+
                                 if viewModel.notificationsEnabled {
                                     Divider()
                                         .background(Color.white.opacity(0.1))
                                         .padding(.leading, 20)
-                                    
+
                                     VStack(alignment: .leading, spacing: 12) {
                                         Text("Notify For")
                                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                                             .foregroundColor(.white.opacity(0.9))
                                             .padding(.horizontal, 20)
                                             .padding(.top, 14)
-                                        
+
                                         ForEach(Array(PrayerName.allCases.enumerated()), id: \.element.id) { index, prayer in
                                             prayerNotificationRow(prayer: prayer)
                                             if index < PrayerName.allCases.count - 1 {
@@ -87,9 +66,32 @@ struct SettingsView: View {
                                 }
                             }
                         }
-                        
-                        // Info Section
-                        infoSection
+
+                        collapsibleSection(title: "Calculation Method", section: .calculationMethod) {
+                            VStack(spacing: 0) {
+                                ForEach(Array(CalculationMethod.allCases.enumerated()), id: \.element.id) { index, method in
+                                    methodRow(method: method)
+                                    if index < CalculationMethod.allCases.count - 1 {
+                                        Divider()
+                                            .background(Color.white.opacity(0.1))
+                                            .padding(.leading, 20)
+                                    }
+                                }
+                            }
+                        }
+
+                        collapsibleSection(title: "Asr Calculation", section: .asrCalculation) {
+                            VStack(spacing: 0) {
+                                ForEach(Array(AsrJuristicMethod.allCases.enumerated()), id: \.element.id) { index, method in
+                                    asrMethodRow(method: method)
+                                    if index < AsrJuristicMethod.allCases.count - 1 {
+                                        Divider()
+                                            .background(Color.white.opacity(0.1))
+                                            .padding(.leading, 20)
+                                    }
+                                }
+                            }
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 24)
@@ -97,6 +99,11 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Calculation Methods", isPresented: $showCalculationInfo) {
+                Button("Done", role: .cancel) {}
+            } message: {
+                Text("Different calculation methods use different angles for Fajr and Isha prayers. Choose the method used by your local mosque or Islamic center.\n\nISNA (Islamic Society of North America) is commonly used in North America with 15° angles for both Fajr and Isha.\n\nNotifications are local on-device alerts based on your current location and chosen method.")
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -107,7 +114,7 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Background
     private var backgroundGradient: some View {
         LinearGradient(
@@ -121,31 +128,75 @@ struct SettingsView: View {
         )
         .ignoresSafeArea()
     }
-    
-    // MARK: - Settings Section
-    private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(title)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white.opacity(0.9))
-                .padding(.horizontal, 4)
-            
-            content()
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white.opacity(0.08))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
-                )
+
+    // MARK: - Collapsible Section
+    private func collapsibleSection<Content: View>(
+        title: String,
+        section: SettingsSection,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        let isExpanded = expandedSections.contains(section)
+
+        return VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Button {
+                    toggleSection(section, isExpanded: isExpanded)
+                } label: {
+                    HStack {
+                        Text(title)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.9))
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if section == .calculationMethod {
+                    Button {
+                        showCalculationInfo = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Button {
+                    toggleSection(section, isExpanded: isExpanded)
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+
+            if isExpanded {
+                Divider()
+                    .background(Color.white.opacity(0.1))
+
+                content()
+                    .transition(.opacity)
+            }
         }
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.14), radius: 14, x: 0, y: 8)
+        )
     }
-    
+
     // MARK: - Method Row
     private func methodRow(method: CalculationMethod) -> some View {
         let isSelected = viewModel.calculationMethod == method
-        
+
         return Button(action: {
             viewModel.calculationMethod = method
         }) {
@@ -154,13 +205,13 @@ struct SettingsView: View {
                     Text(method.rawValue)
                         .font(.system(size: 16, weight: isSelected ? .semibold : .regular, design: .rounded))
                         .foregroundColor(.white)
-                    
+
                     // Show angles for reference
                     HStack(spacing: 12) {
                         Text("Fajr: \(Int(method.fajrAngle))°")
                             .font(.system(size: 12, weight: .regular, design: .monospaced))
                             .foregroundColor(.white.opacity(0.6))
-                        
+
                         if method.ishaMinutesAfterMaghrib == nil {
                             Text("Isha: \(Int(method.ishaAngle))°")
                                 .font(.system(size: 12, weight: .regular, design: .monospaced))
@@ -172,9 +223,9 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
+
                 Spacer()
-                
+
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 20))
@@ -191,11 +242,11 @@ struct SettingsView: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-    
+
     // MARK: - Asr Method Row
     private func asrMethodRow(method: AsrJuristicMethod) -> some View {
         let isSelected = viewModel.asrMethod == method
-        
+
         return Button(action: {
             viewModel.asrMethod = method
         }) {
@@ -204,14 +255,14 @@ struct SettingsView: View {
                     Text(method.rawValue)
                         .font(.system(size: 16, weight: isSelected ? .semibold : .regular, design: .rounded))
                         .foregroundColor(.white)
-                    
+
                     Text("Shadow factor: \(Int(method.shadowFactor))x")
                         .font(.system(size: 12, weight: .regular, design: .monospaced))
                         .foregroundColor(.white.opacity(0.6))
                 }
-                
+
                 Spacer()
-                
+
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 20))
@@ -228,42 +279,7 @@ struct SettingsView: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-    
-    // MARK: - Info Section
-    private var infoSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("About Calculation Methods")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white.opacity(0.9))
-            
-            Text("Different calculation methods use different angles for Fajr and Isha prayers. Choose the method used by your local mosque or Islamic center.")
-                .font(.system(size: 14, weight: .regular, design: .rounded))
-                .foregroundColor(.white.opacity(0.7))
-                .lineSpacing(4)
-            
-            Text("ISNA (Islamic Society of North America) is commonly used in North America with 15° angles for both Fajr and Isha.")
-                .font(.system(size: 14, weight: .regular, design: .rounded))
-                .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
-                .lineSpacing(4)
-                .padding(.top, 8)
-            
-            Text("Notifications are local on-device alerts based on your current location and chosen method.")
-                .font(.system(size: 13, weight: .regular, design: .rounded))
-                .foregroundColor(.white.opacity(0.6))
-                .lineSpacing(3)
-                .padding(.top, 6)
-        }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
-        )
-    }
-    
+
     // MARK: - Notifications
     private var notificationToggleRow: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -276,9 +292,9 @@ struct SettingsView: View {
                         .font(.system(size: 12, weight: .regular, design: .rounded))
                         .foregroundColor(.white.opacity(0.6))
                 }
-                
+
                 Spacer()
-                
+
                 Toggle("", isOn: Binding(
                     get: { viewModel.notificationsEnabled },
                     set: { viewModel.setNotificationsEnabled($0) }
@@ -288,7 +304,7 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            
+
             if viewModel.notificationAuthorizationStatus == .denied {
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -304,15 +320,15 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     private var offsetPickerRow: some View {
         HStack {
             Text("Alert Timing")
                 .font(.system(size: 16, weight: .regular, design: .rounded))
                 .foregroundColor(.white)
-            
+
             Spacer()
-            
+
             Picker("Alert Timing", selection: $viewModel.notificationOffsetMinutes) {
                 ForEach(viewModel.notificationOffsetOptions, id: \.self) { offset in
                     Text(offsetLabel(offset))
@@ -326,7 +342,7 @@ struct SettingsView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
     }
-    
+
     private var debugNotificationRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button {
@@ -347,7 +363,7 @@ struct SettingsView: View {
                 .padding(.vertical, 14)
             }
             .buttonStyle(PlainButtonStyle())
-            
+
             Text("Use this to quickly verify notification permissions and delivery.")
                 .font(.system(size: 12, weight: .regular, design: .rounded))
                 .foregroundColor(.white.opacity(0.6))
@@ -355,7 +371,7 @@ struct SettingsView: View {
                 .padding(.bottom, 12)
         }
     }
-    
+
     private func prayerNotificationRow(prayer: PrayerName) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
@@ -366,9 +382,9 @@ struct SettingsView: View {
                     .font(.system(size: 12, weight: .regular, design: .serif))
                     .foregroundColor(.white.opacity(0.6))
             }
-            
+
             Spacer()
-            
+
             Toggle("", isOn: Binding(
                 get: { viewModel.isPrayerNotificationEnabled(prayer) },
                 set: { viewModel.setPrayerNotificationEnabled($0, for: prayer) }
@@ -380,7 +396,7 @@ struct SettingsView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
     }
-    
+
     private func offsetLabel(_ offset: Int) -> String {
         if offset == 0 {
             return "On time"
@@ -390,10 +406,20 @@ struct SettingsView: View {
         }
         return "\(offset) min after"
     }
+
+    private func toggleSection(_ section: SettingsSection, isExpanded: Bool) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if isExpanded {
+                expandedSections.remove(section)
+            } else {
+                expandedSections.insert(section)
+            }
+        }
+    }
 }
 
 #if DEBUG && targetEnvironment(simulator)
 #Preview {
-    SettingsView(viewModel: PrayerTimesViewModel(locationManager: LocationManager()))
+    SettingsView(viewModel: PrayerKitViewModel(locationManager: LocationManager()))
 }
 #endif
