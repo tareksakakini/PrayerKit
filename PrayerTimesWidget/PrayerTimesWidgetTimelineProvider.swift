@@ -69,6 +69,22 @@ struct PrayerKitTimelineProvider: TimelineProvider {
                     .filter { $0 > startDate && $0 <= horizonEnd }
                     .forEach { entryDates.insert(startOfMinute(for: $0, calendar: calendar)) }
             }
+        } else if let cached = SharedDataManager.shared.loadPrayerTimes() {
+            cached.prayers
+                .map(\.time)
+                .filter { $0 > startDate && $0 <= horizonEnd }
+                .forEach { entryDates.insert(startOfMinute(for: $0, calendar: calendar)) }
+            
+            cached.prayers
+                .compactMap { prayer in
+                    calendar.date(byAdding: .day, value: 1, to: prayer.time)
+                }
+                .filter { $0 > startDate && $0 <= horizonEnd }
+                .forEach { entryDates.insert(startOfMinute(for: $0, calendar: calendar)) }
+            
+            if let fallbackDate = calendar.date(byAdding: .minute, value: 30, to: startDate) {
+                entryDates.insert(fallbackDate)
+            }
         } else if let fallbackDate = calendar.date(byAdding: .minute, value: 30, to: startDate) {
             entryDates.insert(fallbackDate)
         }
@@ -115,7 +131,7 @@ struct PrayerKitTimelineProvider: TimelineProvider {
             }
         }
         
-        var nextPrayer = nextPrayerRelative(to: date, prayers: dailyPrayers?.prayers)
+        var nextPrayer = nextPrayerRelative(to: date, prayers: dailyPrayers?.prayers, calendar: calendar)
         // After last prayer (e.g. Isha), use tomorrow's prayers
         if nextPrayer == nil, let location = location, let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
             let calculator = PrayerTimeCalculator(
@@ -124,7 +140,7 @@ struct PrayerKitTimelineProvider: TimelineProvider {
             )
             let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location)
             dailyPrayers = tomorrowPrayers
-            nextPrayer = nextPrayerRelative(to: date, prayers: tomorrowPrayers.prayers)
+            nextPrayer = nextPrayerRelative(to: date, prayers: tomorrowPrayers.prayers, calendar: calendar)
         }
         let timeUntil = calculateTimeUntil(nextPrayer: nextPrayer, asOf: date)
         
@@ -136,7 +152,14 @@ struct PrayerKitTimelineProvider: TimelineProvider {
         let hijriFormatter = DateFormatter()
         hijriFormatter.calendar = islamic
         hijriFormatter.dateFormat = "d MMMM yyyy"
-        let hijriDate = hijriFormatter.string(from: date) + " AH"
+        let hijriReferenceDate = hijriReferenceDate(
+            asOf: date,
+            location: location,
+            calculationMethod: calculationMethod,
+            asrMethod: asrMethod,
+            prayers: dailyPrayers
+        )
+        let hijriDate = hijriFormatter.string(from: hijriReferenceDate) + " AH"
         
         return PrayerKitEntry(
             date: date,
@@ -149,9 +172,50 @@ struct PrayerKitTimelineProvider: TimelineProvider {
         )
     }
     
-    private func nextPrayerRelative(to date: Date, prayers: [Prayer]?) -> Prayer? {
+    private func nextPrayerRelative(to date: Date, prayers: [Prayer]?, calendar: Calendar) -> Prayer? {
         guard let prayers = prayers else { return nil }
-        return prayers.first { $0.time > date }
+        
+        if let upcoming = prayers.first(where: { $0.time > date }) {
+            return upcoming
+        }
+        
+        guard let fajr = prayers.first(where: { $0.name == .fajr }),
+              let tomorrowFajr = calendar.date(byAdding: .day, value: 1, to: fajr.time) else {
+            return nil
+        }
+        
+        return Prayer(name: .fajr, time: tomorrowFajr)
+    }
+    
+    private func hijriReferenceDate(
+        asOf date: Date,
+        location: CLLocationCoordinate2D?,
+        calculationMethod: CalculationMethod,
+        asrMethod: AsrJuristicMethod,
+        prayers: DailyPrayers?
+    ) -> Date {
+        let calendar = Calendar.current
+        let maghribTime: Date?
+        
+        if let prayers, calendar.isDate(prayers.date, inSameDayAs: date) {
+            maghribTime = prayers.prayers.first(where: { $0.name == .maghrib })?.time
+        } else if let location {
+            let calculator = PrayerTimeCalculator(
+                calculationMethod: calculationMethod,
+                asrMethod: asrMethod
+            )
+            let todayPrayers = calculator.calculatePrayerTimes(for: date, at: location)
+            maghribTime = todayPrayers.prayers.first(where: { $0.name == .maghrib })?.time
+        } else {
+            maghribTime = nil
+        }
+        
+        guard let maghribTime, date >= maghribTime,
+              let nextDay = calendar.date(byAdding: .day, value: 1, to: date) else {
+            return date
+        }
+        
+        return nextDay
     }
     
     private func calculateTimeUntil(nextPrayer: Prayer?, asOf date: Date) -> String? {

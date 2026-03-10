@@ -250,7 +250,32 @@ class PrayerKitViewModel: ObservableObject {
         let formatter = DateFormatter()
         formatter.calendar = islamic
         formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: DateProvider.now()) + " AH"
+        return formatter.string(from: hijriReferenceDate(asOf: DateProvider.now())) + " AH"
+    }
+    
+    private func hijriReferenceDate(asOf date: Date) -> Date {
+        let calendar = Calendar.current
+        let maghribTime: Date?
+        
+        if let dailyPrayers, calendar.isDate(dailyPrayers.date, inSameDayAs: date) {
+            maghribTime = dailyPrayers.prayers.first(where: { $0.name == .maghrib })?.time
+        } else if let location = locationManager.location {
+            let calculator = PrayerTimeCalculator(
+                calculationMethod: calculationMethod,
+                asrMethod: asrMethod
+            )
+            let todayPrayers = calculator.calculatePrayerTimes(for: date, at: location)
+            maghribTime = todayPrayers.prayers.first(where: { $0.name == .maghrib })?.time
+        } else {
+            maghribTime = nil
+        }
+        
+        guard let maghribTime, date >= maghribTime,
+              let nextDay = calendar.date(byAdding: .day, value: 1, to: date) else {
+            return date
+        }
+        
+        return nextDay
     }
     
     var notificationAuthorizationLabel: String {

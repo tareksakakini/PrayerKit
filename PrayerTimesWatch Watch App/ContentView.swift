@@ -90,7 +90,9 @@ struct ContentView: View {
         let formatter = DateFormatter()
         formatter.calendar = islamic
         formatter.dateFormat = "d MMMM yyyy"
-        hijriDate = formatter.string(from: Date()) + " AH"
+        hijriDate = formatter.string(
+            from: hijriReferenceDate(asOf: DateProvider.now(), shared: shared, prayers: prayers)
+        ) + " AH"
     }
     
     private func resolvePrayers(shared: SharedDataManager, asOf date: Date) -> DailyPrayers? {
@@ -126,6 +128,31 @@ struct ContentView: View {
         }
         
         return dailyPrayers
+    }
+    
+    private func hijriReferenceDate(asOf date: Date, shared: SharedDataManager, prayers: DailyPrayers?) -> Date {
+        let calendar = Calendar.current
+        let maghribTime: Date?
+        
+        if let prayers, calendar.isDate(prayers.date, inSameDayAs: date) {
+            maghribTime = prayers.prayers.first(where: { $0.name == .maghrib })?.time
+        } else if let location = shared.loadLocation() {
+            let calculator = PrayerTimeCalculator(
+                calculationMethod: shared.loadCalculationMethod(),
+                asrMethod: shared.loadAsrMethod()
+            )
+            let todayPrayers = calculator.calculatePrayerTimes(for: date, at: location)
+            maghribTime = todayPrayers.prayers.first(where: { $0.name == .maghrib })?.time
+        } else {
+            maghribTime = nil
+        }
+        
+        guard let maghribTime, date >= maghribTime,
+              let nextDay = calendar.date(byAdding: .day, value: 1, to: date) else {
+            return date
+        }
+        
+        return nextDay
     }
 }
 
