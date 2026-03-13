@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var prayers: DailyPrayers?
+    @State private var nextPrayer: Prayer?
     @State private var cityName: String = ""
     @State private var hijriDate: String = ""
     @Environment(\.scenePhase) private var scenePhase
@@ -18,7 +19,7 @@ struct ContentView: View {
             if let prayers = prayers {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 8) {
-                        if let next = prayers.nextPrayer {
+                        if let next = nextPrayer {
                             HStack {
                                 Image(systemName: next.name.icon)
                                     .font(.caption)
@@ -83,23 +84,25 @@ struct ContentView: View {
     
     private func loadData() {
         let shared = SharedDataManager.shared
-        prayers = resolvePrayers(shared: shared, asOf: DateProvider.now())
+        let now = DateProvider.now()
+        prayers = resolvePrayers(shared: shared, asOf: now)
+        nextPrayer = resolveNextPrayer(shared: shared, prayers: prayers, asOf: now)
         cityName = shared.loadCityName()
-        
+
         let islamic = Calendar(identifier: .islamicUmmAlQura)
         let formatter = DateFormatter()
         formatter.calendar = islamic
         formatter.dateFormat = "d MMMM yyyy"
         hijriDate = formatter.string(
-            from: hijriReferenceDate(asOf: DateProvider.now(), shared: shared, prayers: prayers)
+            from: hijriReferenceDate(asOf: now, shared: shared, prayers: prayers)
         ) + " AH"
     }
-    
+
     private func resolvePrayers(shared: SharedDataManager, asOf date: Date) -> DailyPrayers? {
         var dailyPrayers = shared.loadPrayerTimes()
         let calendar = Calendar.current
         let location = shared.loadLocation()
-        
+
         // Recalculate if missing or from another day, to avoid stale next-prayer values.
         if dailyPrayers == nil || !calendar.isDate(dailyPrayers!.date, inSameDayAs: date) {
             if let location = location {
@@ -113,21 +116,32 @@ struct ContentView: View {
                 }
             }
         }
-        
-        // After the last prayer, show tomorrow's Fajr as next.
-        if dailyPrayers?.nextPrayer == nil,
-           let location = location,
-           let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
+
+        return dailyPrayers
+    }
+
+    private func resolveNextPrayer(shared: SharedDataManager, prayers: DailyPrayers?, asOf date: Date) -> Prayer? {
+        if let todayNext = prayers?.nextPrayer {
+            return todayNext
+        }
+
+        // All today's prayers are past — compute tomorrow's Fajr
+        let calendar = Calendar.current
+        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) else { return nil }
+
+        if let location = shared.loadLocation() {
             let calculator = PrayerTimeCalculator(
                 calculationMethod: shared.loadCalculationMethod(),
                 asrMethod: shared.loadAsrMethod()
             )
             let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location)
-            dailyPrayers = tomorrowPrayers
-            shared.savePrayerTimes(tomorrowPrayers)
+            return tomorrowPrayers.prayers.first(where: { $0.name == .fajr })
+        } else if let fajr = prayers?.prayers.first(where: { $0.name == .fajr }),
+                  let approxTomorrowFajr = calendar.date(byAdding: .day, value: 1, to: fajr.time) {
+            return Prayer(name: .fajr, time: approxTomorrowFajr)
         }
-        
-        return dailyPrayers
+
+        return nil
     }
     
     private func hijriReferenceDate(asOf date: Date, shared: SharedDataManager, prayers: DailyPrayers?) -> Date {

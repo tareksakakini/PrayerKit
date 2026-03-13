@@ -233,7 +233,7 @@ class PrayerTimeCalculator {
     
     private func julianDay(for date: Date) -> Double {
         let calendar = Calendar(identifier: .gregorian)
-        let components = calendar.dateComponents(in: TimeZone(secondsFromGMT: 0)!, from: date)
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
         
         guard let year = components.year,
               let month = components.month,
