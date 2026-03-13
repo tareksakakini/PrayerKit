@@ -102,12 +102,6 @@ class PrayerKitViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.countdownTick = Date()
                 self.recalculateIfDateOrTimeZoneChanged()
-                // Recalculate when we've passed all prayers (e.g. after Isha) to show tomorrow's Fajr
-                if self.dailyPrayers != nil && self.dailyPrayers?.nextPrayer == nil,
-                   let location = self.locationManager.location,
-                   let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: DateProvider.now()) {
-                    self.calculatePrayerTimes(for: location, date: tomorrow)
-                }
                 // Re-sync to next minute boundary to stay aligned with the clock
                 self.scheduleCountdownTick(atNextMinuteBoundary: true)
             }
@@ -208,20 +202,34 @@ class PrayerKitViewModel: ObservableObject {
         countdownTick = Date()
         refreshNotificationAuthorizationStatus()
         recalculateIfDateOrTimeZoneChanged()
-        if dailyPrayers != nil && dailyPrayers?.nextPrayer == nil,
-           let location = locationManager.location,
-           let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: DateProvider.now()) {
-            calculatePrayerTimes(for: location, date: tomorrow)
-        }
         // Re-sync timer to clock when app becomes active (e.g. returning from background)
         scheduleCountdownTick(atNextMinuteBoundary: true)
     }
     
+    /// The next upcoming prayer: today's next prayer, or tomorrow's Fajr after Isha.
+    /// Unlike `dailyPrayers?.nextPrayer`, this never returns nil when prayers are available.
+    var nextPrayer: Prayer? {
+        // Depend on countdownTick so SwiftUI re-evaluates each minute
+        _ = countdownTick
+
+        if let todayNext = dailyPrayers?.nextPrayer {
+            return todayNext
+        }
+
+        // All today's prayers are past — compute tomorrow's Fajr
+        guard let location = locationManager.location else { return nil }
+        let now = DateProvider.now()
+        guard let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: now) else { return nil }
+        let calculator = PrayerTimeCalculator(calculationMethod: calculationMethod, asrMethod: asrMethod)
+        let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location)
+        return tomorrowPrayers.prayers.first(where: { $0.name == .fajr })
+    }
+
     func timeUntilNextPrayer() -> String? {
-        guard let nextPrayer = dailyPrayers?.nextPrayer else {
+        guard let nextPrayer = nextPrayer else {
             return nil
         }
-        
+
         let now = DateProvider.now()
         let difference = nextPrayer.time.timeIntervalSince(now)
         

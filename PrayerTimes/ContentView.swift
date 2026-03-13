@@ -65,7 +65,7 @@ struct ContentView: View {
                     }
                     
                     // Next prayer card
-                    if let nextPrayer = viewModel.dailyPrayers?.nextPrayer {
+                    if let nextPrayer = viewModel.nextPrayer {
                         nextPrayerCard(prayer: nextPrayer)
                     }
                     
