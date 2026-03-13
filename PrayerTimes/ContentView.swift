@@ -229,11 +229,12 @@ struct ContentView: View {
                         .font(.system(size: 24, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
                     
-                    if let timeUntil = viewModel.timeUntilNextPrayer() {
-                        Text("in \(timeUntil)")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(.white.opacity(0.6))
+                    HStack(spacing: 4) {
+                        Text("in")
+                        Text(prayer.time, style: .timer)
                     }
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.6))
                 }
             }
         }
