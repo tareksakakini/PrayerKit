@@ -133,15 +133,20 @@ struct PrayerKitTimelineProvider: TimelineProvider {
         }
         
         var nextPrayer = nextPrayerRelative(to: date, prayers: dailyPrayers?.prayers, calendar: calendar)
-        // After last prayer (e.g. Isha), use tomorrow's prayers
-        if nextPrayer == nil, let location = location, let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
-            let calculator = PrayerTimeCalculator(
-                calculationMethod: calculationMethod,
-                asrMethod: asrMethod
-            )
-            let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location)
-            dailyPrayers = tomorrowPrayers
-            nextPrayer = nextPrayerRelative(to: date, prayers: tomorrowPrayers.prayers, calendar: calendar)
+        // After last prayer (e.g. Isha), find tomorrow's next prayer
+        if nextPrayer == nil, let tomorrow = calendar.date(byAdding: .day, value: 1, to: date) {
+            if let location = location {
+                let calculator = PrayerTimeCalculator(
+                    calculationMethod: calculationMethod,
+                    asrMethod: asrMethod
+                )
+                let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location)
+                nextPrayer = nextPrayerRelative(to: date, prayers: tomorrowPrayers.prayers, calendar: calendar)
+            } else if let fajr = dailyPrayers?.prayers.first(where: { $0.name == .fajr }),
+                      let approxTomorrowFajr = calendar.date(byAdding: .day, value: 1, to: fajr.time) {
+                // No location — approximate tomorrow's Fajr from cached data
+                nextPrayer = Prayer(name: .fajr, time: approxTomorrowFajr)
+            }
         }
         let timeUntil = calculateTimeUntil(nextPrayer: nextPrayer, asOf: date)
         
@@ -182,16 +187,7 @@ struct PrayerKitTimelineProvider: TimelineProvider {
         // exact second passes but before the next entry takes over.
         let dateMinute = startOfMinute(for: date, calendar: calendar)
 
-        if let upcoming = prayers.first(where: { startOfMinute(for: $0.time, calendar: calendar) > dateMinute }) {
-            return upcoming
-        }
-
-        guard let fajr = prayers.first(where: { $0.name == .fajr }),
-              let tomorrowFajr = calendar.date(byAdding: .day, value: 1, to: fajr.time) else {
-            return nil
-        }
-
-        return Prayer(name: .fajr, time: tomorrowFajr)
+        return prayers.first(where: { startOfMinute(for: $0.time, calendar: calendar) > dateMinute })
     }
     
     private func hijriReferenceDate(
