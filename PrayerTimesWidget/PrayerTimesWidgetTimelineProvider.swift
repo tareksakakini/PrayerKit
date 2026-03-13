@@ -97,7 +97,8 @@ struct PrayerKitTimelineProvider: TimelineProvider {
     }
     
     private func startOfMinute(for date: Date, calendar: Calendar) -> Date {
-        calendar.date(bySetting: .second, value: 0, of: date) ?? date
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        return calendar.date(from: components) ?? date
     }
     
     private func createEntry(for date: Date) -> PrayerKitEntry {
@@ -174,16 +175,22 @@ struct PrayerKitTimelineProvider: TimelineProvider {
     
     private func nextPrayerRelative(to date: Date, prayers: [Prayer]?, calendar: Calendar) -> Prayer? {
         guard let prayers = prayers else { return nil }
-        
-        if let upcoming = prayers.first(where: { $0.time > date }) {
+
+        // Compare at minute granularity so that a prayer in the same minute
+        // as the entry date is treated as "current" (not upcoming).
+        // This prevents Text(.timer) from counting UP after the prayer's
+        // exact second passes but before the next entry takes over.
+        let dateMinute = startOfMinute(for: date, calendar: calendar)
+
+        if let upcoming = prayers.first(where: { startOfMinute(for: $0.time, calendar: calendar) > dateMinute }) {
             return upcoming
         }
-        
+
         guard let fajr = prayers.first(where: { $0.name == .fajr }),
               let tomorrowFajr = calendar.date(byAdding: .day, value: 1, to: fajr.time) else {
             return nil
         }
-        
+
         return Prayer(name: .fajr, time: tomorrowFajr)
     }
     
