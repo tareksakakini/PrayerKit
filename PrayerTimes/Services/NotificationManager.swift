@@ -13,6 +13,15 @@ final class NotificationManager: NSObject {
 
     private let center = UNUserNotificationCenter.current()
     private let requestPrefix = "prayer_notification_"
+    private let schedulingStateQueue = DispatchQueue(label: "NotificationManager.schedulingState")
+    private var schedulingGeneration: UInt64 = 0
+    
+    private struct NotificationScheduleSnapshot {
+        let dailyPrayers: [DailyPrayers]
+        let atPrayerEnabledNames: Set<PrayerName>
+        let reminderEnabledNames: Set<PrayerName>
+        let reminderLeadMinutes: Int
+    }
 
     private override init() {
         super.init()
@@ -35,6 +44,7 @@ final class NotificationManager: NSObject {
     }
 
     func clearScheduledPrayerNotifications() {
+        invalidateSchedulingGeneration()
         removePendingPrayerRequests()
     }
 
@@ -44,8 +54,17 @@ final class NotificationManager: NSObject {
         reminderEnabledNames: Set<PrayerName>,
         reminderLeadMinutes: Int
     ) {
+        let snapshot = NotificationScheduleSnapshot(
+            dailyPrayers: dailyPrayers,
+            atPrayerEnabledNames: atPrayerEnabledNames,
+            reminderEnabledNames: reminderEnabledNames,
+            reminderLeadMinutes: reminderLeadMinutes
+        )
+        let generation = nextSchedulingGeneration()
+        
         authorizationStatus { [weak self] status in
             guard let self else { return }
+            guard self.isCurrentSchedulingGeneration(generation) else { return }
             let canSchedule = status == .authorized || status == .provisional || status == .ephemeral
             guard canSchedule else {
                 self.clearScheduledPrayerNotifications()
@@ -53,19 +72,25 @@ final class NotificationManager: NSObject {
             }
 
             self.removePendingPrayerRequests {
-                for day in dailyPrayers {
+                guard self.isCurrentSchedulingGeneration(generation) else { return }
+                
+                for day in snapshot.dailyPrayers {
+                    guard self.isCurrentSchedulingGeneration(generation) else { return }
+                    
                     for prayer in day.prayers {
-                        if atPrayerEnabledNames.contains(prayer.name) {
+                        guard self.isCurrentSchedulingGeneration(generation) else { return }
+                        
+                        if snapshot.atPrayerEnabledNames.contains(prayer.name) {
                             self.scheduleSingleNotification(
                                 for: prayer,
                                 offsetMinutes: 0,
                                 kind: "at_time"
                             )
                         }
-                        if reminderEnabledNames.contains(prayer.name) {
+                        if snapshot.reminderEnabledNames.contains(prayer.name) {
                             self.scheduleSingleNotification(
                                 for: prayer,
-                                offsetMinutes: -abs(reminderLeadMinutes),
+                                offsetMinutes: -abs(snapshot.reminderLeadMinutes),
                                 kind: "reminder"
                             )
                         }
@@ -115,6 +140,25 @@ final class NotificationManager: NSObject {
                 self.center.removePendingNotificationRequests(withIdentifiers: identifiers)
             }
             completion?()
+        }
+    }
+    
+    private func nextSchedulingGeneration() -> UInt64 {
+        schedulingStateQueue.sync {
+            schedulingGeneration += 1
+            return schedulingGeneration
+        }
+    }
+    
+    private func invalidateSchedulingGeneration() {
+        schedulingStateQueue.sync {
+            schedulingGeneration += 1
+        }
+    }
+    
+    private func isCurrentSchedulingGeneration(_ generation: UInt64) -> Bool {
+        schedulingStateQueue.sync {
+            schedulingGeneration == generation
         }
     }
 

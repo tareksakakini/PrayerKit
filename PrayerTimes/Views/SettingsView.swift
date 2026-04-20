@@ -329,7 +329,13 @@ struct SettingsView: View {
 
             Spacer()
 
-            Picker("Upcoming Reminder", selection: $viewModel.reminderLeadMinutes) {
+            Picker(
+                "Upcoming Reminder",
+                selection: Binding(
+                    get: { viewModel.reminderLeadMinutes },
+                    set: { viewModel.setReminderLeadMinutes($0) }
+                )
+            ) {
                 ForEach(viewModel.reminderLeadOptions, id: \.self) { minutes in
                     Text("\(minutes) min before")
                         .tag(minutes)

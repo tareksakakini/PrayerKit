@@ -32,11 +32,18 @@ class PrayerKitViewModel: ObservableObject {
     }
     @Published var notificationsEnabled: Bool = false {
         didSet {
+            guard !isHydratingNotificationPreferences, oldValue != notificationsEnabled else { return }
             handleNotificationToggleChange()
         }
     }
     @Published var reminderLeadMinutes: Int = 10 {
         didSet {
+            let sanitizedLead = sanitizedReminderLead(reminderLeadMinutes)
+            if sanitizedLead != reminderLeadMinutes {
+                reminderLeadMinutes = sanitizedLead
+                return
+            }
+            guard !isHydratingNotificationPreferences, oldValue != reminderLeadMinutes else { return }
             saveNotificationPreferences()
             if notificationsEnabled {
                 rescheduleNotificationsForCurrentState()
@@ -55,6 +62,7 @@ class PrayerKitViewModel: ObservableObject {
         PrayerName.allCases.filter(\.defaultNotificationEnabled)
     )
     private var isUpdatingNotificationsInternally = false
+    private var isHydratingNotificationPreferences = false
     
     private let calculationMethodKey = "calculationMethod"
     private let asrMethodKey = "asrMethod"
@@ -64,6 +72,14 @@ class PrayerKitViewModel: ObservableObject {
     private let reminderPrayerNamesKey = "upcomingReminderPrayerNames"
     private let legacyNotificationOffsetKey = "notificationOffsetMinutes"
     private let legacyNotificationPrayerNamesKey = "notificationPrayerNames"
+    
+    private struct LoadedNotificationPreferences {
+        let notificationsEnabled: Bool
+        let reminderLeadMinutes: Int
+        var atPrayerSelections: Set<PrayerName>
+        var upcomingReminderSelections: Set<PrayerName>
+        var needsPersistence: Bool
+    }
     
     init(locationManager: LocationManager) {
         self.locationManager = locationManager
@@ -345,6 +361,10 @@ class PrayerKitViewModel: ObservableObject {
         notificationsEnabled = enabled
     }
     
+    func setReminderLeadMinutes(_ minutes: Int) {
+        reminderLeadMinutes = sanitizedReminderLead(minutes)
+    }
+    
     func sendDebugNotification() {
         NotificationManager.shared.requestAuthorization { [weak self] granted in
             DispatchQueue.main.async {
@@ -356,58 +376,85 @@ class PrayerKitViewModel: ObservableObject {
     }
     
     private func loadNotificationPreferences() {
-        notificationsEnabled = UserDefaults.standard.bool(forKey: notificationsEnabledKey)
+        let defaults = UserDefaults.standard
+        let notificationsEnabled = defaults.bool(forKey: notificationsEnabledKey)
+        let storedLead = defaults.object(forKey: reminderLeadMinutesKey) as? Int
+        let normalizedLead = sanitizedReminderLead(storedLead ?? 10)
+        let hasAtPrayerSelectionsKey = defaults.object(forKey: atPrayerNamesKey) != nil
+        let hasReminderSelectionsKey = defaults.object(forKey: reminderPrayerNamesKey) != nil
+        let hasModernSelectionKeys = hasAtPrayerSelectionsKey || hasReminderSelectionsKey
+        let needsLeadPersistence = storedLead.map { $0 != normalizedLead } ?? false
         
-        if let storedLead = UserDefaults.standard.object(forKey: reminderLeadMinutesKey) as? Int {
-            reminderLeadMinutes = sanitizedReminderLead(storedLead)
-        } else {
-            reminderLeadMinutes = 10
+        var loadedPreferences = LoadedNotificationPreferences(
+            notificationsEnabled: notificationsEnabled,
+            reminderLeadMinutes: normalizedLead,
+            atPrayerSelections: atPrayerNotificationSelections,
+            upcomingReminderSelections: upcomingReminderSelections,
+            needsPersistence: needsLeadPersistence
+        )
+        
+        if hasAtPrayerSelectionsKey,
+           let rawNames = defaults.array(forKey: atPrayerNamesKey) as? [String] {
+            loadedPreferences.atPrayerSelections = Set(rawNames.compactMap { PrayerName(rawValue: $0) })
         }
         
-        var loadedAnyNewValue = false
-        
-        if let rawNames = UserDefaults.standard.array(forKey: atPrayerNamesKey) as? [String] {
-            let restored = Set(rawNames.compactMap { PrayerName(rawValue: $0) })
-            if !restored.isEmpty {
-                atPrayerNotificationSelections = restored
-                loadedAnyNewValue = true
-            }
+        if hasReminderSelectionsKey,
+           let rawNames = defaults.array(forKey: reminderPrayerNamesKey) as? [String] {
+            loadedPreferences.upcomingReminderSelections = Set(rawNames.compactMap { PrayerName(rawValue: $0) })
         }
         
-        if let rawNames = UserDefaults.standard.array(forKey: reminderPrayerNamesKey) as? [String] {
-            let restored = Set(rawNames.compactMap { PrayerName(rawValue: $0) })
-            if !restored.isEmpty {
-                upcomingReminderSelections = restored
-                loadedAnyNewValue = true
-            }
+        if !hasModernSelectionKeys, let migratedPreferences = loadLegacyNotificationPreferences() {
+            loadedPreferences = migratedPreferences
+        } else if !hasAtPrayerSelectionsKey || !hasReminderSelectionsKey {
+            loadedPreferences.needsPersistence = true
         }
         
-        if !loadedAnyNewValue {
-            migrateLegacyNotificationPreferences()
-        }
+        applyLoadedNotificationPreferences(loadedPreferences)
     }
     
-    private func migrateLegacyNotificationPreferences() {
-        guard let rawNames = UserDefaults.standard.array(forKey: legacyNotificationPrayerNamesKey) as? [String] else {
-            return
+    private func loadLegacyNotificationPreferences() -> LoadedNotificationPreferences? {
+        let defaults = UserDefaults.standard
+        guard let rawNames = defaults.array(forKey: legacyNotificationPrayerNamesKey) as? [String] else {
+            return nil
         }
         
         let restored = Set(rawNames.compactMap { PrayerName(rawValue: $0) })
-        guard !restored.isEmpty else { return }
+        guard !restored.isEmpty else { return nil }
         
-        let legacyOffset = UserDefaults.standard.object(forKey: legacyNotificationOffsetKey) as? Int ?? 0
+        let notificationsEnabled = defaults.bool(forKey: notificationsEnabledKey)
+        let legacyOffset = defaults.object(forKey: legacyNotificationOffsetKey) as? Int ?? 0
         
         if legacyOffset < 0 {
-            atPrayerNotificationSelections = []
-            upcomingReminderSelections = restored
-            reminderLeadMinutes = sanitizedReminderLead(abs(legacyOffset))
-        } else {
-            atPrayerNotificationSelections = restored
-            upcomingReminderSelections = []
-            reminderLeadMinutes = 10
+            return LoadedNotificationPreferences(
+                notificationsEnabled: notificationsEnabled,
+                reminderLeadMinutes: sanitizedReminderLead(abs(legacyOffset)),
+                atPrayerSelections: [],
+                upcomingReminderSelections: restored,
+                needsPersistence: true
+            )
         }
         
-        saveNotificationPreferences()
+        return LoadedNotificationPreferences(
+            notificationsEnabled: notificationsEnabled,
+            reminderLeadMinutes: 10,
+            atPrayerSelections: restored,
+            upcomingReminderSelections: [],
+            needsPersistence: true
+        )
+    }
+    
+    private func applyLoadedNotificationPreferences(_ preferences: LoadedNotificationPreferences) {
+        isHydratingNotificationPreferences = true
+        defer { isHydratingNotificationPreferences = false }
+        
+        notificationsEnabled = preferences.notificationsEnabled
+        reminderLeadMinutes = preferences.reminderLeadMinutes
+        atPrayerNotificationSelections = preferences.atPrayerSelections
+        upcomingReminderSelections = preferences.upcomingReminderSelections
+        
+        if preferences.needsPersistence {
+            saveNotificationPreferences()
+        }
     }
     
     private func sanitizedReminderLead(_ value: Int) -> Int {
