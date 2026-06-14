@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E635B5E62FD17C42000AE377 /* OneSignalFramework in Frameworks */ = {isa = PBXBuildFile; productRef = E635B5E52FD17C42000AE377 /* OneSignalFramework */; };
 		E65A82262ED593F400194B3D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E65A82252ED593F400194B3D /* WidgetKit.framework */; };
 		E65A82282ED593F400194B3D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E65A82272ED593F400194B3D /* SwiftUI.framework */; };
 		E65A82372ED593F700194B3D /* PrayerTimesWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E65A82232ED593F400194B3D /* PrayerTimesWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E6914EB62FDF657A00CE4702 /* PrayerKitNotificationExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E6914EAF2FDF657A00CE4702 /* PrayerKitNotificationExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E6D6E1712F596F3B00CF2C15 /* PrayerTimesWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E6D6E1672F596F3900CF2C15 /* PrayerTimesWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E6D6E17B2F596FE800CF2C15 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E65A82252ED593F400194B3D /* WidgetKit.framework */; };
 		E6D6E17C2F596FE800CF2C15 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E65A82272ED593F400194B3D /* SwiftUI.framework */; };
@@ -23,6 +25,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = E65A82222ED593F400194B3D;
 			remoteInfo = PrayerTimesWidgetExtension;
+		};
+		E6914EB42FDF657A00CE4702 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E65A80E62ED58C1A00194B3D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E6914EAE2FDF657A00CE4702;
+			remoteInfo = PrayerKitNotificationExtension;
 		};
 		E6D6E16F2F596F3B00CF2C15 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -48,6 +57,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				E65A82372ED593F700194B3D /* PrayerTimesWidgetExtension.appex in Embed Foundation Extensions */,
+				E6914EB62FDF657A00CE4702 /* PrayerKitNotificationExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -82,6 +92,7 @@
 		E65A82252ED593F400194B3D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		E65A82272ED593F400194B3D /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		E65A82442ED6290D00194B3D /* PrayerTimesWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PrayerTimesWidgetExtension.entitlements; sourceTree = "<group>"; };
+		E6914EAF2FDF657A00CE4702 /* PrayerKitNotificationExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrayerKitNotificationExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6D6E1672F596F3900CF2C15 /* PrayerTimesWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "PrayerTimesWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6D6E17A2F596FE800CF2C15 /* PrayerTimesWatchExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrayerTimesWatchExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E6D6E1902F5970A100CF2C15 /* PrayerTimesWatchExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PrayerTimesWatchExtension.entitlements; sourceTree = "<group>"; };
@@ -104,6 +115,23 @@
 				Services/SharedDataManager.swift,
 			);
 			target = E65A82222ED593F400194B3D /* PrayerTimesWidgetExtension */;
+		};
+		E6914EB92FDF657A00CE4702 /* Exceptions for "PrayerKitNotificationExtension" folder in "PrayerKitNotificationExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E6914EAE2FDF657A00CE4702 /* PrayerKitNotificationExtension */;
+		};
+		E6914EBD2FDF660500CE4702 /* Exceptions for "PrayerTimes" folder in "PrayerKitNotificationExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/Prayer.swift,
+				Services/NotificationManager.swift,
+				Services/PrayerTimeCalculator.swift,
+				Services/SharedDataManager.swift,
+			);
+			target = E6914EAE2FDF657A00CE4702 /* PrayerKitNotificationExtension */;
 		};
 		E6D6E18A2F596FE900CF2C15 /* Exceptions for "PrayerTimesWatch" folder in "PrayerTimesWatchExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -155,6 +183,7 @@
 				E65A82412ED625E600194B3D /* Exceptions for "PrayerTimes" folder in "PrayerTimesWidgetExtension" target */,
 				E6D6E1932F5970FD00CF2C15 /* Exceptions for "PrayerTimes" folder in "PrayerTimesWatch Watch App" target */,
 				E6D6E1942F5970FD00CF2C15 /* Exceptions for "PrayerTimes" folder in "PrayerTimesWatchExtension" target */,
+				E6914EBD2FDF660500CE4702 /* Exceptions for "PrayerTimes" folder in "PrayerKitNotificationExtension" target */,
 			);
 			path = PrayerTimes;
 			sourceTree = "<group>";
@@ -167,6 +196,14 @@
 				E6D6E19C2F59712300CF2C15 /* Exceptions for "PrayerTimesWidget" folder in "PrayerTimesWatchExtension" target */,
 			);
 			path = PrayerTimesWidget;
+			sourceTree = "<group>";
+		};
+		E6914EB02FDF657A00CE4702 /* PrayerKitNotificationExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E6914EB92FDF657A00CE4702 /* Exceptions for "PrayerKitNotificationExtension" folder in "PrayerKitNotificationExtension" target */,
+			);
+			path = PrayerKitNotificationExtension;
 			sourceTree = "<group>";
 		};
 		E6D6E1682F596F3900CF2C15 /* PrayerTimesWatch Watch App */ = {
@@ -189,6 +226,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E635B5E62FD17C42000AE377 /* OneSignalFramework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -198,6 +236,13 @@
 			files = (
 				E65A82282ED593F400194B3D /* SwiftUI.framework in Frameworks */,
 				E65A82262ED593F400194B3D /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6914EAC2FDF657A00CE4702 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -229,6 +274,7 @@
 				E65A82292ED593F400194B3D /* PrayerTimesWidget */,
 				E6D6E1682F596F3900CF2C15 /* PrayerTimesWatch Watch App */,
 				E6D6E17D2F596FE800CF2C15 /* PrayerTimesWatch */,
+				E6914EB02FDF657A00CE4702 /* PrayerKitNotificationExtension */,
 				E65A82242ED593F400194B3D /* Frameworks */,
 				E65A80EF2ED58C1A00194B3D /* Products */,
 			);
@@ -241,6 +287,7 @@
 				E65A82232ED593F400194B3D /* PrayerTimesWidgetExtension.appex */,
 				E6D6E1672F596F3900CF2C15 /* PrayerTimesWatch Watch App.app */,
 				E6D6E17A2F596FE800CF2C15 /* PrayerTimesWatchExtension.appex */,
+				E6914EAF2FDF657A00CE4702 /* PrayerKitNotificationExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -272,12 +319,14 @@
 			dependencies = (
 				E65A82362ED593F700194B3D /* PBXTargetDependency */,
 				E6D6E1702F596F3B00CF2C15 /* PBXTargetDependency */,
+				E6914EB52FDF657A00CE4702 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E65A80F02ED58C1A00194B3D /* PrayerTimes */,
 			);
 			name = PrayerTimes;
 			packageProductDependencies = (
+				E635B5E52FD17C42000AE377 /* OneSignalFramework */,
 			);
 			productName = PrayerTimes;
 			productReference = E65A80EE2ED58C1A00194B3D /* PrayerTimes.app */;
@@ -303,6 +352,28 @@
 			);
 			productName = PrayerTimesWidgetExtension;
 			productReference = E65A82232ED593F400194B3D /* PrayerTimesWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		E6914EAE2FDF657A00CE4702 /* PrayerKitNotificationExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6914EBA2FDF657A00CE4702 /* Build configuration list for PBXNativeTarget "PrayerKitNotificationExtension" */;
+			buildPhases = (
+				E6914EAB2FDF657A00CE4702 /* Sources */,
+				E6914EAC2FDF657A00CE4702 /* Frameworks */,
+				E6914EAD2FDF657A00CE4702 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E6914EB02FDF657A00CE4702 /* PrayerKitNotificationExtension */,
+			);
+			name = PrayerKitNotificationExtension;
+			packageProductDependencies = (
+			);
+			productName = PrayerKitNotificationExtension;
+			productReference = E6914EAF2FDF657A00CE4702 /* PrayerKitNotificationExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		E6D6E1662F596F3900CF2C15 /* PrayerTimesWatch Watch App */ = {
@@ -367,6 +438,9 @@
 					E65A82222ED593F400194B3D = {
 						CreatedOnToolsVersion = 16.2;
 					};
+					E6914EAE2FDF657A00CE4702 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					E6D6E1662F596F3900CF2C15 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -384,6 +458,9 @@
 			);
 			mainGroup = E65A80E52ED58C1A00194B3D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E635B5E42FD17C42000AE377 /* XCRemoteSwiftPackageReference "OneSignal-iOS-SDK" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E65A80EF2ED58C1A00194B3D /* Products */;
 			projectDirPath = "";
@@ -393,6 +470,7 @@
 				E65A82222ED593F400194B3D /* PrayerTimesWidgetExtension */,
 				E6D6E1662F596F3900CF2C15 /* PrayerTimesWatch Watch App */,
 				E6D6E1792F596FE800CF2C15 /* PrayerTimesWatchExtension */,
+				E6914EAE2FDF657A00CE4702 /* PrayerKitNotificationExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -406,6 +484,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E65A82212ED593F400194B3D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6914EAD2FDF657A00CE4702 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -443,6 +528,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E6914EAB2FDF657A00CE4702 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E6D6E1632F596F3900CF2C15 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -464,6 +556,11 @@
 			isa = PBXTargetDependency;
 			target = E65A82222ED593F400194B3D /* PrayerTimesWidgetExtension */;
 			targetProxy = E65A82352ED593F700194B3D /* PBXContainerItemProxy */;
+		};
+		E6914EB52FDF657A00CE4702 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E6914EAE2FDF657A00CE4702 /* PrayerKitNotificationExtension */;
+			targetProxy = E6914EB42FDF657A00CE4702 /* PBXContainerItemProxy */;
 		};
 		E6D6E1702F596F3B00CF2C15 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -612,11 +709,13 @@
 				DEVELOPMENT_ASSET_PATHS = "\"PrayerTimes/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "tektechinc.PrayerKit.notification-refresh";
+				INFOPLIST_KEY_CFBundleDisplayName = "Prayer Kit";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Prayer Kit needs your location to calculate accurate prayer times for your area and send prayer time notifications.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Prayer Kit needs your location to calculate accurate prayer times for your area.";
-				INFOPLIST_KEY_CFBundleDisplayName = "Prayer Kit";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "fetch processing remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -645,11 +744,13 @@
 				DEVELOPMENT_ASSET_PATHS = "\"PrayerTimes/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_BGTaskSchedulerPermittedIdentifiers = "tektechinc.PrayerKit.notification-refresh";
+				INFOPLIST_KEY_CFBundleDisplayName = "Prayer Kit";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Prayer Kit needs your location to calculate accurate prayer times for your area and send prayer time notifications.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Prayer Kit needs your location to calculate accurate prayer times for your area.";
-				INFOPLIST_KEY_CFBundleDisplayName = "Prayer Kit";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = "fetch processing remote-notification";
 				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -716,6 +817,64 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E6914EB72FDF657A00CE4702 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PrayerKitNotificationExtension/PrayerKitNotificationExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PrayerKitNotificationExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PrayerKitNotificationExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = tektechinc.PrayerKit.PrayerKitNotificationExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E6914EB82FDF657A00CE4702 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PrayerKitNotificationExtension/PrayerKitNotificationExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PrayerKitNotificationExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = PrayerKitNotificationExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = tektechinc.PrayerKit.PrayerKitNotificationExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -883,6 +1042,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		E6914EBA2FDF657A00CE4702 /* Build configuration list for PBXNativeTarget "PrayerKitNotificationExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6914EB72FDF657A00CE4702 /* Debug */,
+				E6914EB82FDF657A00CE4702 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E6D6E1752F596F3B00CF2C15 /* Build configuration list for PBXNativeTarget "PrayerTimesWatch Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -902,6 +1070,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E635B5E42FD17C42000AE377 /* XCRemoteSwiftPackageReference "OneSignal-iOS-SDK" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/OneSignal/OneSignal-iOS-SDK";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E635B5E52FD17C42000AE377 /* OneSignalFramework */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E635B5E42FD17C42000AE377 /* XCRemoteSwiftPackageReference "OneSignal-iOS-SDK" */;
+			productName = OneSignalFramework;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E65A80E62ED58C1A00194B3D /* Project object */;
 }

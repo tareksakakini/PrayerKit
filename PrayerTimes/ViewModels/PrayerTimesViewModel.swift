@@ -169,28 +169,26 @@ class PrayerKitViewModel: ObservableObject {
     
     func calculatePrayerTimes(for coordinate: CLLocationCoordinate2D, date: Date? = nil) {
         isLoading = true
-        
+
         let calculator = PrayerTimeCalculator(
             calculationMethod: calculationMethod,
             asrMethod: asrMethod
         )
-        
+
         let targetDate = date ?? DateProvider.now()
         let prayers = calculator.calculatePrayerTimes(for: targetDate, at: coordinate)
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: targetDate)
-        let tomorrowPrayers = tomorrow.map { calculator.calculatePrayerTimes(for: $0, at: coordinate) }
-        
+
         DispatchQueue.main.async {
             self.dailyPrayers = prayers
             self.isLoading = false
-            
+
             // Save to shared storage for widget
             SharedDataManager.shared.savePrayerTimes(prayers)
             // Sync to Watch (runs on separate device, cannot access iPhone App Group)
             WatchConnectivityManager.shared.syncToWatch()
-            
+
             if self.notificationsEnabled {
-                self.schedulePrayerNotifications(primary: prayers, secondary: tomorrowPrayers)
+                self.rescheduleNotificationsForCurrentState()
             }
         }
     }
@@ -220,6 +218,9 @@ class PrayerKitViewModel: ObservableObject {
         recalculateIfDateOrTimeZoneChanged()
         // Re-sync timer to clock when app becomes active (e.g. returning from background)
         scheduleCountdownTick(atNextMinuteBoundary: true)
+        // Refill the prayer-notification window on every foreground activation
+        // so a returning user always has a fresh schedule.
+        rescheduleNotificationsForCurrentState()
     }
     
     /// The next upcoming prayer: today's next prayer, or tomorrow's Fajr after Isha.
@@ -446,15 +447,15 @@ class PrayerKitViewModel: ObservableObject {
     private func applyLoadedNotificationPreferences(_ preferences: LoadedNotificationPreferences) {
         isHydratingNotificationPreferences = true
         defer { isHydratingNotificationPreferences = false }
-        
+
         notificationsEnabled = preferences.notificationsEnabled
         reminderLeadMinutes = preferences.reminderLeadMinutes
         atPrayerNotificationSelections = preferences.atPrayerSelections
         upcomingReminderSelections = preferences.upcomingReminderSelections
-        
-        if preferences.needsPersistence {
-            saveNotificationPreferences()
-        }
+
+        // Always re-save on launch so the app-group mirror used by the NSE
+        // stays in sync with UserDefaults.standard (cheap; only 4 keys).
+        saveNotificationPreferences()
     }
     
     private func sanitizedReminderLead(_ value: Int) -> Int {
@@ -522,16 +523,20 @@ class PrayerKitViewModel: ObservableObject {
     }
     
     private func saveNotificationPreferences() {
+        let atPrayerRawNames = atPrayerNotificationSelections.map(\.rawValue)
+        let reminderRawNames = upcomingReminderSelections.map(\.rawValue)
+
         UserDefaults.standard.set(notificationsEnabled, forKey: notificationsEnabledKey)
         UserDefaults.standard.set(reminderLeadMinutes, forKey: reminderLeadMinutesKey)
-        UserDefaults.standard.set(
-            atPrayerNotificationSelections.map(\.rawValue),
-            forKey: atPrayerNamesKey
-        )
-        UserDefaults.standard.set(
-            upcomingReminderSelections.map(\.rawValue),
-            forKey: reminderPrayerNamesKey
-        )
+        UserDefaults.standard.set(atPrayerRawNames, forKey: atPrayerNamesKey)
+        UserDefaults.standard.set(reminderRawNames, forKey: reminderPrayerNamesKey)
+
+        // Mirror into the app group so the Notification Service Extension
+        // (which runs in a separate process) can read the same prefs.
+        SharedDataManager.shared.saveNotificationsEnabled(notificationsEnabled)
+        SharedDataManager.shared.saveReminderLeadMinutes(reminderLeadMinutes)
+        SharedDataManager.shared.saveAtPrayerNotificationNames(atPrayerRawNames)
+        SharedDataManager.shared.saveUpcomingReminderPrayerNames(reminderRawNames)
     }
     
     private func handleNotificationToggleChange() {
@@ -555,20 +560,17 @@ class PrayerKitViewModel: ObservableObject {
     
     private func rescheduleNotificationsForCurrentState() {
         guard notificationsEnabled, let location = locationManager.location else { return }
-        
+
         let calculator = PrayerTimeCalculator(
             calculationMethod: calculationMethod,
             asrMethod: asrMethod
         )
-        let today = calculator.calculatePrayerTimes(for: DateProvider.now(), at: location)
-        let tomorrowDate = Calendar.current.date(byAdding: .day, value: 1, to: DateProvider.now())
-        let tomorrow = tomorrowDate.map { calculator.calculatePrayerTimes(for: $0, at: location) }
-        
-        schedulePrayerNotifications(primary: today, secondary: tomorrow)
-    }
-    
-    private func schedulePrayerNotifications(primary: DailyPrayers, secondary: DailyPrayers?) {
-        let days = [primary, secondary].compactMap { $0 }
+        let days = NotificationManager.upcomingDays(
+            count: NotificationManager.scheduledDaysWindow,
+            calculator: calculator,
+            location: location
+        )
+
         NotificationManager.shared.scheduleNotifications(
             for: days,
             atPrayerEnabledNames: atPrayerNotificationSelections,

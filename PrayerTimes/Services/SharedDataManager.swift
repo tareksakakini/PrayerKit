@@ -127,6 +127,50 @@ class SharedDataManager {
         return method
     }
     
+    // MARK: - Notification Preferences
+    // Stored in the app group so the Notification Service Extension can read them.
+
+    func saveNotificationsEnabled(_ enabled: Bool) {
+        guard let userDefaults else { return }
+        userDefaults.set(enabled, forKey: "notificationsEnabled")
+    }
+
+    func loadNotificationsEnabled() -> Bool {
+        guard let userDefaults else { return false }
+        return userDefaults.bool(forKey: "notificationsEnabled")
+    }
+
+    func saveAtPrayerNotificationNames(_ names: [String]) {
+        guard let userDefaults else { return }
+        userDefaults.set(names, forKey: "atPrayerNotificationNames")
+    }
+
+    func loadAtPrayerNotificationNames() -> [String] {
+        guard let userDefaults else { return [] }
+        return userDefaults.array(forKey: "atPrayerNotificationNames") as? [String] ?? []
+    }
+
+    func saveUpcomingReminderPrayerNames(_ names: [String]) {
+        guard let userDefaults else { return }
+        userDefaults.set(names, forKey: "upcomingReminderPrayerNames")
+    }
+
+    func loadUpcomingReminderPrayerNames() -> [String] {
+        guard let userDefaults else { return [] }
+        return userDefaults.array(forKey: "upcomingReminderPrayerNames") as? [String] ?? []
+    }
+
+    func saveReminderLeadMinutes(_ minutes: Int) {
+        guard let userDefaults else { return }
+        userDefaults.set(minutes, forKey: "reminderLeadMinutes")
+    }
+
+    func loadReminderLeadMinutes() -> Int? {
+        guard let userDefaults else { return nil }
+        guard userDefaults.object(forKey: "reminderLeadMinutes") != nil else { return nil }
+        return userDefaults.integer(forKey: "reminderLeadMinutes")
+    }
+
     // MARK: - City Name
     
     func saveCityName(_ name: String) {
