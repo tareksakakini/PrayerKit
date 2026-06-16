@@ -1,0 +1,74 @@
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# --- Xcode ---
+# Build products
+build/
+DerivedData/
+DerivedDataLocal/
+*.o
+*.a
+*.app
+*.appex
+*.dSYM/
+*.ipa
+*.xcarchive
+*.xcuserstate
+*.moved-aside
+
+# Per-user Xcode state (UI layout, breakpoints, scheme management)
+xcuserdata/
+*.xcuserdatad/
+*.xcuserstate
+
+# Xcode logs and indexes
+*.log
+*.hmap
+*.swp
+*.swo
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.pins
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/
+
+# CocoaPods (not used here, but standard to ignore)
+Pods/
+*.lock
+
+# Carthage (not used here, but standard to ignore)
+Carthage/Build/
+
+# fastlane (not used here, but standard to ignore)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# --- Secrets / credentials ---
+# Never commit signing material or env files
+*.p12
+*.pem
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+*.p8
+.env
+.env.*
+secrets.xcconfig
+Secrets.plist
+
+# --- Claude Code ---
+.claude/
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.iml
