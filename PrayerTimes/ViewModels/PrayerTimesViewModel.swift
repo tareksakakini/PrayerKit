@@ -9,6 +9,7 @@ import Foundation
 import CoreLocation
 import Combine
 import UserNotifications
+import WidgetKit
 
 class PrayerKitViewModel: ObservableObject {
     @Published var dailyPrayers: DailyPrayers?
@@ -149,12 +150,14 @@ class PrayerKitViewModel: ObservableObject {
         UserDefaults.standard.set(calculationMethod.rawValue, forKey: calculationMethodKey)
         SharedDataManager.shared.saveCalculationMethod(calculationMethod)
         WatchConnectivityManager.shared.syncToWatch()
+        WidgetCenter.shared.reloadAllTimelines()
     }
-    
+
     private func saveAsrMethod() {
         UserDefaults.standard.set(asrMethod.rawValue, forKey: asrMethodKey)
         SharedDataManager.shared.saveAsrMethod(asrMethod)
         WatchConnectivityManager.shared.syncToWatch()
+        WidgetCenter.shared.reloadAllTimelines()
     }
     
     private func setupBindings() {
@@ -186,6 +189,7 @@ class PrayerKitViewModel: ObservableObject {
             SharedDataManager.shared.savePrayerTimes(prayers)
             // Sync to Watch (runs on separate device, cannot access iPhone App Group)
             WatchConnectivityManager.shared.syncToWatch()
+            WidgetCenter.shared.reloadAllTimelines()
 
             if self.notificationsEnabled {
                 self.rescheduleNotificationsForCurrentState()

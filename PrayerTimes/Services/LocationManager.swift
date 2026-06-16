@@ -8,6 +8,7 @@
 import Foundation
 import CoreLocation
 import Combine
+import WidgetKit
 
 class LocationManager: NSObject, ObservableObject {
     private let locationManager = CLLocationManager()
@@ -63,6 +64,7 @@ class LocationManager: NSObject, ObservableObject {
                     SharedDataManager.shared.saveCityName(self?.cityName ?? "Unknown")
                     // Push city updates after reverse geocode finishes.
                     WatchConnectivityManager.shared.syncToWatch()
+                    WidgetCenter.shared.reloadAllTimelines()
                 }
             }
         }
@@ -92,6 +94,7 @@ extension LocationManager: CLLocationManagerDelegate {
             SharedDataManager.shared.saveLocation(location.coordinate)
             // Sync to Watch (ViewModel will recalculate prayers; this pushes location immediately)
             WatchConnectivityManager.shared.syncToWatch()
+            WidgetCenter.shared.reloadAllTimelines()
             
             // Debug: Print coordinates
             print("Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
