@@ -14,11 +14,8 @@ final class NotificationManager: NSObject {
     static let shared = NotificationManager()
 
     static let backgroundRefreshTaskIdentifier = "tektechinc.PrayerKit.notification-refresh"
-    // Debug phase: cap at ~1 day's worth (5 prayers × 2 kinds = 10) so we
-    // notice failures within hours instead of weeks. Window covers today +
-    // tomorrow so the cap still fills late in the day.
-    static let scheduledDaysWindow = 2
-    private static let maxScheduledNotifications = 10
+    static let scheduledDaysWindow = 7
+    private static let maxScheduledNotifications = 60
 
     private let center = UNUserNotificationCenter.current()
     private let requestPrefix = "prayer_notification_"
