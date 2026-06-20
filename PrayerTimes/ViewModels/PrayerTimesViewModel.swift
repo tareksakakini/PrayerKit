@@ -105,27 +105,12 @@ class PrayerKitViewModel: ObservableObject {
         setupBindings()
         startCountdownTimer()
         refreshNotificationAuthorizationStatus()
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleDebugSimulatedCityChanged),
-            name: .debugSimulatedCityChanged,
-            object: nil
-        )
     }
 
     deinit {
         countdownTimer?.invalidate()
-        NotificationCenter.default.removeObserver(self)
     }
 
-    @objc private func handleDebugSimulatedCityChanged() {
-        DispatchQueue.main.async {
-            self.dailyPrayers = nil
-            self.recalculatePrayerTimes()
-        }
-    }
-    
     private func startCountdownTimer() {
         scheduleCountdownTick(atNextMinuteBoundary: true)
     }
@@ -261,23 +246,19 @@ class PrayerKitViewModel: ObservableObject {
         let prayers = calculator.calculatePrayerTimes(
             for: targetDate,
             at: coordinate,
-            timeZone: DebugLocationOverride.shared.effectiveTimeZone
+            timeZone: DateProvider.timeZone()
         )
 
         DispatchQueue.main.async {
             self.dailyPrayers = prayers
             self.isLoading = false
 
-            // While debug simulation is active, keep the widget/watch on the
-            // real device data instead of polluting them with simulated values.
-            if !DebugLocationOverride.shared.isActive {
-                SharedDataManager.shared.savePrayerTimes(prayers)
-                WatchConnectivityManager.shared.syncToWatch()
-                WidgetCenter.shared.reloadAllTimelines()
+            SharedDataManager.shared.savePrayerTimes(prayers)
+            WatchConnectivityManager.shared.syncToWatch()
+            WidgetCenter.shared.reloadAllTimelines()
 
-                if self.notificationsEnabled {
-                    self.rescheduleNotificationsForCurrentState()
-                }
+            if self.notificationsEnabled {
+                self.rescheduleNotificationsForCurrentState()
             }
         }
     }
@@ -292,7 +273,7 @@ class PrayerKitViewModel: ObservableObject {
               let location = locationManager.location else { return }
 
         let now = DateProvider.now()
-        let effectiveTimeZone = DebugLocationOverride.shared.effectiveTimeZone
+        let effectiveTimeZone = DateProvider.timeZone()
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = effectiveTimeZone
 
@@ -329,7 +310,7 @@ class PrayerKitViewModel: ObservableObject {
         // All today's prayers are past — compute tomorrow's Fajr
         guard let location = locationManager.location else { return nil }
         let now = DateProvider.now()
-        let effectiveTimeZone = DebugLocationOverride.shared.effectiveTimeZone
+        let effectiveTimeZone = DateProvider.timeZone()
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = effectiveTimeZone
         guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) else { return nil }
@@ -363,22 +344,22 @@ class PrayerKitViewModel: ObservableObject {
     var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d"
-        formatter.timeZone = DebugLocationOverride.shared.effectiveTimeZone
+        formatter.timeZone = DateProvider.timeZone()
         return formatter.string(from: DateProvider.now())
     }
 
     var hijriDate: String {
         var islamic = Calendar(identifier: .islamicUmmAlQura)
-        islamic.timeZone = DebugLocationOverride.shared.effectiveTimeZone
+        islamic.timeZone = DateProvider.timeZone()
         let formatter = DateFormatter()
         formatter.calendar = islamic
-        formatter.timeZone = DebugLocationOverride.shared.effectiveTimeZone
+        formatter.timeZone = DateProvider.timeZone()
         formatter.dateFormat = "d MMMM yyyy"
         return formatter.string(from: hijriReferenceDate(asOf: DateProvider.now())) + " AH"
     }
 
     private func hijriReferenceDate(asOf date: Date) -> Date {
-        let effectiveTimeZone = DebugLocationOverride.shared.effectiveTimeZone
+        let effectiveTimeZone = DateProvider.timeZone()
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = effectiveTimeZone
         let maghribTime: Date?

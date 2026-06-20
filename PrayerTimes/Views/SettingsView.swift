@@ -14,17 +14,11 @@ struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
     @State private var expandedSections: Set<SettingsSection> = []
     @State private var showCalculationInfo = false
-    #if DEBUG
-    @ObservedObject private var debugOverride = DebugLocationOverride.shared
-    #endif
 
     private enum SettingsSection: Hashable {
         case notifications
         case calculationMethod
         case asrCalculation
-        #if DEBUG
-        case debugSimulator
-        #endif
     }
 
     var body: some View {
@@ -104,12 +98,6 @@ struct SettingsView: View {
                                 }
                             }
                         }
-
-                        #if DEBUG
-                        collapsibleSection(title: "Debug: Simulate Location", section: .debugSimulator) {
-                            debugSimulatorContent
-                        }
-                        #endif
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 24)
@@ -500,98 +488,6 @@ struct SettingsView: View {
         }
     }
 
-    #if DEBUG
-    // MARK: - Debug Simulator
-    private var debugSimulatorContent: some View {
-        VStack(spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Current Simulation")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.7))
-                    Text(debugOverride.simulatedCity?.displayLabel ?? "Off (using real GPS)")
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundColor(.white)
-                    if let city = debugOverride.simulatedCity {
-                        Text("\(city.timeZoneIdentifier) — \(String(format: "%.4f, %.4f", city.latitude, city.longitude))")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                }
-                Spacer()
-                if debugOverride.simulatedCity != nil {
-                    Button {
-                        debugOverride.setSimulatedCity(nil)
-                    } label: {
-                        Text("Clear")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color(red: 0.85, green: 0.75, blue: 0.55), lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
-
-            Divider()
-                .background(Color.white.opacity(0.1))
-                .padding(.leading, 20)
-
-            ForEach(Array(sortedDebugCities.enumerated()), id: \.element.id) { index, city in
-                debugCityRow(city: city)
-                if index < sortedDebugCities.count - 1 {
-                    Divider()
-                        .background(Color.white.opacity(0.1))
-                        .padding(.leading, 20)
-                }
-            }
-        }
-        .padding(.bottom, 8)
-    }
-
-    private var sortedDebugCities: [DebugCity] {
-        DebugCity.top50.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-    }
-
-    private func debugCityRow(city: DebugCity) -> some View {
-        let isSelected = debugOverride.simulatedCity?.id == city.id
-
-        return Button {
-            debugOverride.setSimulatedCity(isSelected ? nil : city)
-        } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(city.displayLabel)
-                        .font(.system(size: 15, weight: isSelected ? .semibold : .regular, design: .rounded))
-                        .foregroundColor(.white)
-                    Text(city.timeZoneIdentifier)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.5))
-                }
-                Spacer()
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(
-                isSelected
-                    ? Color(red: 0.85, green: 0.75, blue: 0.55).opacity(0.15)
-                    : Color.clear
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    #endif
 }
 
 #if DEBUG && targetEnvironment(simulator)

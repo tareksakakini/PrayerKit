@@ -26,18 +26,6 @@ class LocationManager: NSObject, ObservableObject {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 100 // Update if moved more than 100 meters
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleDebugSimulatedCityChanged),
-            name: .debugSimulatedCityChanged,
-            object: nil
-        )
-        applyDebugOverrideIfNeeded()
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
 
     func requestLocationPermission() {
@@ -45,44 +33,17 @@ class LocationManager: NSObject, ObservableObject {
     }
 
     func requestLocation() {
-        if applyDebugOverrideIfNeeded() { return }
         locationError = nil
         cityName = "Getting location..."
         locationManager.requestLocation()
     }
 
     func startUpdatingLocation() {
-        if applyDebugOverrideIfNeeded() { return }
         locationError = nil
         cityName = "Getting location..."
         locationManager.startUpdatingLocation()
     }
 
-    @objc private func handleDebugSimulatedCityChanged() {
-        if !applyDebugOverrideIfNeeded() {
-            // Override was just cleared — restart real GPS.
-            startUpdatingLocation()
-        }
-    }
-
-    /// Publishes the simulated city as if it were the device location.
-    /// Returns true when an override is active so callers can skip real GPS.
-    @discardableResult
-    private func applyDebugOverrideIfNeeded() -> Bool {
-        guard let city = DebugLocationOverride.shared.simulatedCity else { return false }
-
-        DispatchQueue.main.async {
-            self.locationError = nil
-            self.location = city.coordinate
-            self.cityName = city.name
-            self.countryName = city.country
-            self.isoCountryCode = city.countryCode
-            // Intentionally do NOT write to the shared app group — the widget
-            // and watch should keep showing the real device's data.
-        }
-        return true
-    }
-    
     func stopUpdatingLocation() {
         locationManager.stopUpdatingLocation()
     }
@@ -114,12 +75,6 @@ class LocationManager: NSObject, ObservableObject {
 
 extension LocationManager: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        // Ignore real GPS updates while the debug simulator is active.
-        if DebugLocationOverride.shared.isActive {
-            locationManager.stopUpdatingLocation()
-            return
-        }
-
         guard let location = locations.last else { return }
 
         // Check location accuracy - reject if accuracy is too poor
@@ -150,9 +105,6 @@ extension LocationManager: CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // Suppress GPS errors while the debug simulator is active.
-        if DebugLocationOverride.shared.isActive { return }
-
         DispatchQueue.main.async {
             if let clError = error as? CLError, clError.code == .denied {
                 self.locationError = "Location access denied. Please enable in Settings."
@@ -166,9 +118,6 @@ extension LocationManager: CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         DispatchQueue.main.async {
             self.authorizationStatus = manager.authorizationStatus
-
-            // Debug simulator overrides authorization-driven flows.
-            if self.applyDebugOverrideIfNeeded() { return }
 
             switch manager.authorizationStatus {
             case .authorizedWhenInUse, .authorizedAlways:

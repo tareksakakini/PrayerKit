@@ -9,9 +9,6 @@ import Foundation
 
 enum DateProvider {
     static var now: () -> Date = { Date() }
-    /// Time zone used for display and wall-clock construction. Overridable
-    /// by the debug location simulator on the iOS app; defaults to the device
-    /// time zone everywhere else (widget, watch, notification extension).
     static var timeZone: () -> TimeZone = { TimeZone.current }
 }
 
