@@ -15,14 +15,27 @@ class PrayerKitViewModel: ObservableObject {
     @Published var dailyPrayers: DailyPrayers?
     @Published var isLoading: Bool = true
     @Published private(set) var countdownTick: Date = Date()
-    @Published var calculationMethod: CalculationMethod = .northAmerica {
+    /// Manual override for the calculation method. `nil` means automatic —
+    /// the effective method is derived from the device's country.
+    @Published var manualCalculationMethod: CalculationMethod? = nil {
         didSet {
+            guard !isHydratingCalculationPreferences, oldValue != manualCalculationMethod else { return }
+            saveManualCalculationMethodPreference()
             saveCalculationMethod()
             if locationManager.location != nil {
                 recalculatePrayerTimes()
             }
         }
     }
+
+    /// Method actually used for calculations: manual override if set,
+    /// otherwise the country-recommended method (or MWL as a global fallback).
+    var calculationMethod: CalculationMethod {
+        if let manual = manualCalculationMethod { return manual }
+        return CalculationMethod.recommended(forCountryCode: locationManager.isoCountryCode) ?? .muslimWorldLeague
+    }
+
+    var isUsingAutomaticCalculationMethod: Bool { manualCalculationMethod == nil }
     @Published var asrMethod: AsrJuristicMethod = .shafi {
         didSet {
             saveAsrMethod()
@@ -64,8 +77,11 @@ class PrayerKitViewModel: ObservableObject {
     )
     private var isUpdatingNotificationsInternally = false
     private var isHydratingNotificationPreferences = false
-    
-    private let calculationMethodKey = "calculationMethod"
+    private var isHydratingCalculationPreferences = false
+
+    /// Legacy key, kept for read-only migration on first launch after the upgrade.
+    private let legacyCalculationMethodKey = "calculationMethod"
+    private let manualCalculationMethodKey = "manualCalculationMethod"
     private let asrMethodKey = "asrMethod"
     private let notificationsEnabledKey = "notificationsEnabled"
     private let reminderLeadMinutesKey = "reminderLeadMinutes"
@@ -89,10 +105,25 @@ class PrayerKitViewModel: ObservableObject {
         setupBindings()
         startCountdownTimer()
         refreshNotificationAuthorizationStatus()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleDebugSimulatedCityChanged),
+            name: .debugSimulatedCityChanged,
+            object: nil
+        )
     }
-    
+
     deinit {
         countdownTimer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func handleDebugSimulatedCityChanged() {
+        DispatchQueue.main.async {
+            self.dailyPrayers = nil
+            self.recalculatePrayerTimes()
+        }
     }
     
     private func startCountdownTimer() {
@@ -128,26 +159,54 @@ class PrayerKitViewModel: ObservableObject {
     }
     
     private func loadPreferences() {
-        // Load calculation method
-        if let savedMethod = UserDefaults.standard.string(forKey: calculationMethodKey),
-           let method = CalculationMethod.allCases.first(where: { $0.rawValue == savedMethod }) {
-            calculationMethod = method
+        let defaults = UserDefaults.standard
+        isHydratingCalculationPreferences = true
+
+        // Load calculation method.
+        // Precedence: new manual-override key → legacy key (migrate) → automatic.
+        if defaults.object(forKey: manualCalculationMethodKey) != nil {
+            let raw = defaults.string(forKey: manualCalculationMethodKey) ?? ""
+            manualCalculationMethod = CalculationMethod.allCases.first(where: { $0.rawValue == raw })
+        } else if let legacy = defaults.string(forKey: legacyCalculationMethodKey),
+                  let method = CalculationMethod.allCases.first(where: { $0.rawValue == legacy }) {
+            // Existing users had to actively pick a method, so preserve their
+            // choice as the manual override rather than silently switching them
+            // to automatic.
+            manualCalculationMethod = method
+            defaults.set(method.rawValue, forKey: manualCalculationMethodKey)
         } else {
-            // Default to ISNA (North America)
-            calculationMethod = .northAmerica
+            manualCalculationMethod = nil
         }
-        
+
+        isHydratingCalculationPreferences = false
+        // Seed shared storage with the current effective method so the widget
+        // and notification extension don't read a stale value at first launch.
+        saveCalculationMethod()
+
         // Load Asr method
-        if let savedAsr = UserDefaults.standard.string(forKey: asrMethodKey),
+        if let savedAsr = defaults.string(forKey: asrMethodKey),
            let method = AsrJuristicMethod.allCases.first(where: { $0.rawValue == savedAsr }) {
             asrMethod = method
         } else {
             asrMethod = .shafi
         }
     }
-    
+
+    private func saveManualCalculationMethodPreference() {
+        let defaults = UserDefaults.standard
+        if let method = manualCalculationMethod {
+            defaults.set(method.rawValue, forKey: manualCalculationMethodKey)
+        } else {
+            // Explicit empty string marks "automatic" — distinct from
+            // "key never set" so we don't run the legacy migration again.
+            defaults.set("", forKey: manualCalculationMethodKey)
+        }
+    }
+
+    /// Mirrors the effective method to the app group (widget + notification
+    /// extension consume this). Called whenever the effective method may have
+    /// changed: manual override changes, or country code changes in auto mode.
     private func saveCalculationMethod() {
-        UserDefaults.standard.set(calculationMethod.rawValue, forKey: calculationMethodKey)
         SharedDataManager.shared.saveCalculationMethod(calculationMethod)
         WatchConnectivityManager.shared.syncToWatch()
         WidgetCenter.shared.reloadAllTimelines()
@@ -168,6 +227,26 @@ class PrayerKitViewModel: ObservableObject {
                 self?.calculatePrayerTimes(for: coordinate)
             }
             .store(in: &cancellables)
+
+        // In automatic mode, a country change can change the effective
+        // calculation method. Recompute + re-mirror to shared storage.
+        locationManager.$isoCountryCode
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] _ in
+                guard let self, self.isUsingAutomaticCalculationMethod else { return }
+                self.saveCalculationMethod()
+                if self.locationManager.location != nil {
+                    self.recalculatePrayerTimes()
+                }
+            }
+            .store(in: &cancellables)
+
+        // Bubble locationManager state changes so SwiftUI views observing this
+        // ViewModel re-render when (e.g.) the auto-resolved method changes.
+        locationManager.objectWillChange
+            .sink { [weak self] in self?.objectWillChange.send() }
+            .store(in: &cancellables)
     }
     
     func calculatePrayerTimes(for coordinate: CLLocationCoordinate2D, date: Date? = nil) {
@@ -179,20 +258,26 @@ class PrayerKitViewModel: ObservableObject {
         )
 
         let targetDate = date ?? DateProvider.now()
-        let prayers = calculator.calculatePrayerTimes(for: targetDate, at: coordinate)
+        let prayers = calculator.calculatePrayerTimes(
+            for: targetDate,
+            at: coordinate,
+            timeZone: DebugLocationOverride.shared.effectiveTimeZone
+        )
 
         DispatchQueue.main.async {
             self.dailyPrayers = prayers
             self.isLoading = false
 
-            // Save to shared storage for widget
-            SharedDataManager.shared.savePrayerTimes(prayers)
-            // Sync to Watch (runs on separate device, cannot access iPhone App Group)
-            WatchConnectivityManager.shared.syncToWatch()
-            WidgetCenter.shared.reloadAllTimelines()
+            // While debug simulation is active, keep the widget/watch on the
+            // real device data instead of polluting them with simulated values.
+            if !DebugLocationOverride.shared.isActive {
+                SharedDataManager.shared.savePrayerTimes(prayers)
+                WatchConnectivityManager.shared.syncToWatch()
+                WidgetCenter.shared.reloadAllTimelines()
 
-            if self.notificationsEnabled {
-                self.rescheduleNotificationsForCurrentState()
+                if self.notificationsEnabled {
+                    self.rescheduleNotificationsForCurrentState()
+                }
             }
         }
     }
@@ -205,12 +290,16 @@ class PrayerKitViewModel: ObservableObject {
     private func recalculateIfDateOrTimeZoneChanged() {
         guard let currentPrayers = dailyPrayers,
               let location = locationManager.location else { return }
-        
+
         let now = DateProvider.now()
-        let isDifferentDay = !Calendar.current.isDate(currentPrayers.date, inSameDayAs: now)
-        let previousOffset = TimeZone.current.secondsFromGMT(for: currentPrayers.date)
-        let currentOffset = TimeZone.current.secondsFromGMT(for: now)
-        
+        let effectiveTimeZone = DebugLocationOverride.shared.effectiveTimeZone
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = effectiveTimeZone
+
+        let isDifferentDay = !calendar.isDate(currentPrayers.date, inSameDayAs: now)
+        let previousOffset = effectiveTimeZone.secondsFromGMT(for: currentPrayers.date)
+        let currentOffset = effectiveTimeZone.secondsFromGMT(for: now)
+
         if isDifferentDay || previousOffset != currentOffset {
             calculatePrayerTimes(for: location, date: now)
         }
@@ -240,9 +329,12 @@ class PrayerKitViewModel: ObservableObject {
         // All today's prayers are past — compute tomorrow's Fajr
         guard let location = locationManager.location else { return nil }
         let now = DateProvider.now()
-        guard let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: now) else { return nil }
+        let effectiveTimeZone = DebugLocationOverride.shared.effectiveTimeZone
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = effectiveTimeZone
+        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) else { return nil }
         let calculator = PrayerTimeCalculator(calculationMethod: calculationMethod, asrMethod: asrMethod)
-        let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location)
+        let tomorrowPrayers = calculator.calculatePrayerTimes(for: tomorrow, at: location, timeZone: effectiveTimeZone)
         return tomorrowPrayers.prayers.first(where: { $0.name == .fajr })
     }
 
@@ -271,21 +363,26 @@ class PrayerKitViewModel: ObservableObject {
     var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d"
+        formatter.timeZone = DebugLocationOverride.shared.effectiveTimeZone
         return formatter.string(from: DateProvider.now())
     }
-    
+
     var hijriDate: String {
-        let islamic = Calendar(identifier: .islamicUmmAlQura)
+        var islamic = Calendar(identifier: .islamicUmmAlQura)
+        islamic.timeZone = DebugLocationOverride.shared.effectiveTimeZone
         let formatter = DateFormatter()
         formatter.calendar = islamic
+        formatter.timeZone = DebugLocationOverride.shared.effectiveTimeZone
         formatter.dateFormat = "d MMMM yyyy"
         return formatter.string(from: hijriReferenceDate(asOf: DateProvider.now())) + " AH"
     }
-    
+
     private func hijriReferenceDate(asOf date: Date) -> Date {
-        let calendar = Calendar.current
+        let effectiveTimeZone = DebugLocationOverride.shared.effectiveTimeZone
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = effectiveTimeZone
         let maghribTime: Date?
-        
+
         if let dailyPrayers, calendar.isDate(dailyPrayers.date, inSameDayAs: date) {
             maghribTime = dailyPrayers.prayers.first(where: { $0.name == .maghrib })?.time
         } else if let location = locationManager.location {
@@ -293,17 +390,17 @@ class PrayerKitViewModel: ObservableObject {
                 calculationMethod: calculationMethod,
                 asrMethod: asrMethod
             )
-            let todayPrayers = calculator.calculatePrayerTimes(for: date, at: location)
+            let todayPrayers = calculator.calculatePrayerTimes(for: date, at: location, timeZone: effectiveTimeZone)
             maghribTime = todayPrayers.prayers.first(where: { $0.name == .maghrib })?.time
         } else {
             maghribTime = nil
         }
-        
+
         guard let maghribTime, date >= maghribTime,
               let nextDay = calendar.date(byAdding: .day, value: 1, to: date) else {
             return date
         }
-        
+
         return nextDay
     }
     

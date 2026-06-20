@@ -9,6 +9,10 @@ import Foundation
 
 enum DateProvider {
     static var now: () -> Date = { Date() }
+    /// Time zone used for display and wall-clock construction. Overridable
+    /// by the debug location simulator on the iOS app; defaults to the device
+    /// time zone everywhere else (widget, watch, notification extension).
+    static var timeZone: () -> TimeZone = { TimeZone.current }
 }
 
 enum PrayerName: String, CaseIterable, Identifiable, Codable {
@@ -62,6 +66,7 @@ struct Prayer: Identifiable, Codable {
     var formattedTime: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
+        formatter.timeZone = DateProvider.timeZone()
         return formatter.string(from: time)
     }
     

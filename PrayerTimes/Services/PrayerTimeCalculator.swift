@@ -19,9 +19,15 @@ enum CalculationMethod: String, CaseIterable, Identifiable {
     case kuwait = "Kuwait"
     case singapore = "Singapore"
     case northAmerica = "Islamic Society of North America (ISNA)"
-    
+    case turkey = "Diyanet İşleri (Turkey)"
+    case tehran = "Institute of Geophysics, Tehran"
+    case jafari = "Shia Ithna Ashari (Jafari)"
+    case france = "Grande Mosquée de Paris"
+    case morocco = "Moroccan Ministry of Habous"
+    case russia = "Spiritual Administration of Muslims of Russia"
+
     var id: String { rawValue }
-    
+
     // Fajr angle in degrees
     var fajrAngle: Double {
         switch self {
@@ -34,9 +40,15 @@ enum CalculationMethod: String, CaseIterable, Identifiable {
         case .kuwait: return 18.0
         case .singapore: return 20.0
         case .northAmerica: return 15.0
+        case .turkey: return 18.0
+        case .tehran: return 17.7
+        case .jafari: return 16.0
+        case .france: return 12.0
+        case .morocco: return 19.0
+        case .russia: return 16.0
         }
     }
-    
+
     // Isha angle in degrees (negative means minutes after Maghrib)
     var ishaAngle: Double {
         switch self {
@@ -49,12 +61,68 @@ enum CalculationMethod: String, CaseIterable, Identifiable {
         case .kuwait: return 17.5
         case .singapore: return 18.0
         case .northAmerica: return 15.0
+        case .turkey: return 17.0
+        case .tehran: return 14.0
+        case .jafari: return 14.0
+        case .france: return 12.0
+        case .morocco: return 17.0
+        case .russia: return 15.0
         }
     }
-    
+
     var ishaMinutesAfterMaghrib: Int? {
         switch self {
         case .ummAlQura, .qatar: return 90
+        default: return nil
+        }
+    }
+
+    /// Shia methods set Maghrib at a real solar depression angle (sun below
+    /// the horizon) instead of at sunset. Sunni methods return nil → Maghrib = sunset.
+    var maghribAngle: Double? {
+        switch self {
+        case .tehran: return 4.5
+        case .jafari: return 4.0
+        default: return nil
+        }
+    }
+}
+
+extension CalculationMethod {
+    /// Maps an ISO 3166-1 alpha-2 country code to the calculation method most
+    /// commonly used there. Returns nil for countries without a strong
+    /// convention — callers should fall back to Muslim World League.
+    static func recommended(forCountryCode code: String?) -> CalculationMethod? {
+        guard let code = code?.uppercased() else { return nil }
+        switch code {
+        // North America
+        case "US", "CA", "MX": return .northAmerica
+
+        // Gulf
+        case "SA": return .ummAlQura
+        case "AE": return .dubai
+        case "QA": return .qatar
+        case "KW", "BH": return .kuwait
+
+        // Egypt + Levant + Maghreb (excl. Morocco) + Sudan + Yemen
+        case "EG", "SY", "LB", "JO", "PS", "IL", "IQ", "YE",
+             "DZ", "TN", "LY", "SD", "MR": return .egyptian
+
+        // South Asia
+        case "PK", "IN", "BD", "AF", "LK", "NP", "BT", "MV": return .karachi
+
+        // Country-specific
+        case "TR": return .turkey
+        case "IR": return .tehran
+        case "FR": return .france
+        case "MA": return .morocco
+
+        // Russia + Central Asia + Caucasus
+        case "RU", "KZ", "KG", "TJ", "UZ", "TM", "AZ": return .russia
+
+        // SE Asia (MUIS-aligned 20°/18°)
+        case "SG", "MY", "ID", "BN", "TH", "PH", "VN", "KH", "LA": return .singapore
+
         default: return nil
         }
     }
@@ -86,73 +154,62 @@ class PrayerTimeCalculator {
         self.asrMethod = asrMethod
     }
     
-    func calculatePrayerTimes(for date: Date, at location: CLLocationCoordinate2D) -> DailyPrayers {
-        let calendar = Calendar.current
+    func calculatePrayerTimes(for date: Date, at location: CLLocationCoordinate2D, timeZone: TimeZone? = nil) -> DailyPrayers {
+        let effectiveTimeZone = timeZone ?? DateProvider.timeZone()
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = effectiveTimeZone
         let latitude = location.latitude
         let longitude = location.longitude
-        let timeZone = TimeZone.current
-        
+
         // Calculate prayer times for this date and location
         let times = calculateTimes(for: date,
                                    latitude: latitude,
                                    longitude: longitude,
-                                   timeZone: timeZone)
+                                   timeZone: effectiveTimeZone)
         
         // Create Prayer objects
         var prayers: [Prayer] = []
-        
-        let baseDate = calendar.startOfDay(for: date)
-        
+
         if let fajrTime = times.fajr {
-            prayers.append(Prayer(name: .fajr, time: addHours(fajrTime, on: date, calendar: calendar, fallbackDate: baseDate)))
+            prayers.append(Prayer(name: .fajr, time: addHours(fajrTime, on: date, calendar: calendar)))
         }
-        
+
         if let sunriseTime = times.sunrise {
-            prayers.append(Prayer(name: .sunrise, time: addHours(sunriseTime, on: date, calendar: calendar, fallbackDate: baseDate)))
+            prayers.append(Prayer(name: .sunrise, time: addHours(sunriseTime, on: date, calendar: calendar)))
         }
-        
+
         if let dhuhrTime = times.dhuhr {
-            prayers.append(Prayer(name: .dhuhr, time: addHours(dhuhrTime, on: date, calendar: calendar, fallbackDate: baseDate)))
+            prayers.append(Prayer(name: .dhuhr, time: addHours(dhuhrTime, on: date, calendar: calendar)))
         }
-        
+
         if let asrTime = times.asr {
-            prayers.append(Prayer(name: .asr, time: addHours(asrTime, on: date, calendar: calendar, fallbackDate: baseDate)))
+            prayers.append(Prayer(name: .asr, time: addHours(asrTime, on: date, calendar: calendar)))
         }
-        
+
         if let maghribTime = times.maghrib {
-            prayers.append(Prayer(name: .maghrib, time: addHours(maghribTime, on: date, calendar: calendar, fallbackDate: baseDate)))
+            prayers.append(Prayer(name: .maghrib, time: addHours(maghribTime, on: date, calendar: calendar)))
         }
-        
+
         if let ishaTime = times.isha {
-            prayers.append(Prayer(name: .isha, time: addHours(ishaTime, on: date, calendar: calendar, fallbackDate: baseDate)))
+            prayers.append(Prayer(name: .isha, time: addHours(ishaTime, on: date, calendar: calendar)))
         }
-        
+
         return DailyPrayers(date: date, prayers: prayers)
     }
-    
-    private func addHours(_ hours: Double, on date: Date, calendar: Calendar, fallbackDate: Date) -> Date {
+
+    private func addHours(_ hours: Double, on date: Date, calendar: Calendar) -> Date {
+        // Split hours into a day offset + intra-day seconds, then anchor at the
+        // start of the target day in the calendar's time zone and add seconds.
+        // Avoids `bySettingHour:direction:.forward`, which snaps to the next
+        // occurrence — pushing post-midnight prayers (Fajr/Isha) to the wrong
+        // day when "now" is already past their wall-clock time.
         let dayOffset = Int(floor(hours / 24.0))
         let normalizedHours = hours - (Double(dayOffset) * 24.0)
-        let hour = Int(floor(normalizedHours))
-        let minuteFraction = (normalizedHours - Double(hour)) * 60.0
-        let minute = Int(floor(minuteFraction))
-        let second = min(59, max(0, Int(round((minuteFraction - Double(minute)) * 60.0))))
+        let secondsIntoDay = normalizedHours * 3600.0
+
         let targetDay = calendar.date(byAdding: .day, value: dayOffset, to: date) ?? date
-        
-        if let localWallClockDate = calendar.date(
-            bySettingHour: hour,
-            minute: minute,
-            second: second,
-            of: targetDay,
-            matchingPolicy: .nextTimePreservingSmallerComponents,
-            repeatedTimePolicy: .first,
-            direction: .forward
-        ) {
-            return localWallClockDate
-        }
-        
-        // Fallback to interval arithmetic if local wall-clock construction fails.
-        return fallbackDate.addingTimeInterval(hours * 3600)
+        let startOfTargetDay = calendar.startOfDay(for: targetDay)
+        return startOfTargetDay.addingTimeInterval(secondsIntoDay)
     }
     
     private struct RawTimes {
@@ -170,9 +227,9 @@ class PrayerTimeCalculator {
                                 timeZone: TimeZone) -> RawTimes {
         
         let timeZoneOffsetHours = Double(timeZone.secondsFromGMT(for: date)) / 3600.0
-        
+
         // Julian century relative to J2000.0
-        let julianDay = julianDay(for: date)
+        let julianDay = julianDay(for: date, timeZone: timeZone)
         let julianCentury = (julianDay - 2451545.0) / 36525.0
         
         let equationOfTimeMinutes = equationOfTime(julianCentury: julianCentury)
@@ -195,32 +252,63 @@ class PrayerTimeCalculator {
                                   solarNoon: dhuhr,
                                   isMorning: false)
         
-        let fajr = timeForAngle(angle: -calculationMethod.fajrAngle,
-                                declination: solarDeclination,
-                                latitude: latitude,
-                                solarNoon: dhuhr,
-                                isMorning: true)
-        
-        let maghrib = sunset
-        
+        let fajrAngle = timeForAngle(angle: -calculationMethod.fajrAngle,
+                                     declination: solarDeclination,
+                                     latitude: latitude,
+                                     solarNoon: dhuhr,
+                                     isMorning: true)
+
+        // Shia methods set Maghrib at a real solar depression angle (sun
+        // already past the horizon, ~15-20 min after sunset).
+        let maghrib: Double?
+        if let mAngle = calculationMethod.maghribAngle {
+            maghrib = timeForAngle(angle: -mAngle,
+                                   declination: solarDeclination,
+                                   latitude: latitude,
+                                   solarNoon: dhuhr,
+                                   isMorning: false) ?? sunset
+        } else {
+            maghrib = sunset
+        }
+
         let asrAngle = asrAltitudeAngle(declination: solarDeclination, latitude: latitude)
         let asr = timeForAngle(angle: asrAngle,
                                declination: solarDeclination,
                                latitude: latitude,
                                solarNoon: dhuhr,
                                isMorning: false)
-        
-        let isha: Double?
+
+        let ishaAngleTime: Double?
+        let isFixedOffsetIsha: Bool
         if let minutes = calculationMethod.ishaMinutesAfterMaghrib, let maghrib = maghrib {
-            isha = maghrib + Double(minutes) / 60.0
+            ishaAngleTime = maghrib + Double(minutes) / 60.0
+            isFixedOffsetIsha = true
         } else {
-            isha = timeForAngle(angle: -calculationMethod.ishaAngle,
-                                declination: solarDeclination,
-                                latitude: latitude,
-                                solarNoon: dhuhr,
-                                isMorning: false)
+            ishaAngleTime = timeForAngle(angle: -calculationMethod.ishaAngle,
+                                         declination: solarDeclination,
+                                         latitude: latitude,
+                                         solarNoon: dhuhr,
+                                         isMorning: false)
+            isFixedOffsetIsha = false
         }
-        
+
+        // High-latitude rule: angle-based.
+        // Night is sunset → next day's sunrise (approximated as today's sunrise + 24h).
+        // The night is split into a portion of `angle/60`, scaling per prayer so
+        // steeper-angle methods (MWL 18°) get earlier Fajr / later Isha than
+        // shallower ones (ISNA 15°). Acts as a clamp when the angle math returns
+        // a valid time, and as the anchor when the sun never reaches the angle.
+        // Matches Muslim Pro, PrayTimes.org, and IslamicFinder's behavior at high
+        // latitudes. Fixed-offset Isha methods (Umm Al-Qura, Qatar) are exempt —
+        // their Isha is defined relative to Maghrib, not an angle.
+        let (fajr, isha) = applyAngleBasedHighLatitudeRule(
+            fajrAngleTime: fajrAngle,
+            ishaAngleTime: ishaAngleTime,
+            sunrise: sunrise,
+            sunset: sunset,
+            isFixedOffsetIsha: isFixedOffsetIsha
+        )
+
         return RawTimes(
             fajr: fajr,
             sunrise: sunrise,
@@ -230,9 +318,46 @@ class PrayerTimeCalculator {
             isha: isha
         )
     }
+
+    private func applyAngleBasedHighLatitudeRule(
+        fajrAngleTime: Double?,
+        ishaAngleTime: Double?,
+        sunrise: Double?,
+        sunset: Double?,
+        isFixedOffsetIsha: Bool
+    ) -> (fajr: Double?, isha: Double?) {
+        guard let sunrise, let sunset else {
+            return (fajrAngleTime, ishaAngleTime)
+        }
+
+        let nightDuration = (sunrise + 24) - sunset
+        let fajrPortion = nightDuration * calculationMethod.fajrAngle / 60.0
+        let ishaPortion = nightDuration * calculationMethod.ishaAngle / 60.0
+        let safeFajr = sunrise - fajrPortion
+        let safeIsha = sunset + ishaPortion
+
+        let fajr: Double?
+        if let f = fajrAngleTime {
+            fajr = max(f, safeFajr)
+        } else {
+            fajr = safeFajr
+        }
+
+        let isha: Double?
+        if isFixedOffsetIsha {
+            isha = ishaAngleTime
+        } else if let i = ishaAngleTime {
+            isha = min(i, safeIsha)
+        } else {
+            isha = safeIsha
+        }
+
+        return (fajr, isha)
+    }
     
-    private func julianDay(for date: Date) -> Double {
-        let calendar = Calendar(identifier: .gregorian)
+    private func julianDay(for date: Date, timeZone: TimeZone) -> Double {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         
         guard let year = components.year,
