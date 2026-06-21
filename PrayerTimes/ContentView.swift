@@ -216,25 +216,33 @@ struct ContentView: View {
                     Text(prayer.name.rawValue)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                    
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
                     Text(prayer.name.arabicName)
                         .font(.system(size: 16, weight: .medium, design: .serif))
                         .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(prayer.formattedTime)
                         .font(.system(size: 24, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
-                    
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
                     HStack(spacing: 4) {
                         Text("in")
                         Text(prayer.time, style: .timer)
                     }
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundColor(.white.opacity(0.6))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 }
             }
         }
@@ -324,7 +332,9 @@ struct ContentView: View {
                 Text(prayer.name.rawValue)
                     .font(.system(size: 17, weight: isNext ? .bold : .semibold, design: .rounded))
                     .foregroundColor(isPast ? .white.opacity(0.5) : .white)
-                
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
                 Text(prayer.name.arabicName)
                     .font(.system(size: 13, weight: .medium, design: .serif))
                     .foregroundColor(
@@ -332,10 +342,12 @@ struct ContentView: View {
                             ? Color(red: 0.85, green: 0.75, blue: 0.55).opacity(0.8)
                             : .white.opacity(isPast ? 0.3 : 0.5)
                     )
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            
+
             Spacer()
-            
+
             // Time
             Text(prayer.formattedTime)
                 .font(.system(size: 17, weight: isNext ? .bold : .medium, design: .monospaced))
@@ -344,6 +356,8 @@ struct ContentView: View {
                         ? Color(red: 0.85, green: 0.75, blue: 0.55)
                         : (isPast ? .white.opacity(0.4) : .white.opacity(0.9))
                 )
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             
             // Status indicator
             if isPast {
