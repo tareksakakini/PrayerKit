@@ -50,6 +50,8 @@ struct SettingsView: View {
                                         Text("Notify For")
                                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                                             .foregroundColor(.white.opacity(0.9))
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.7)
                                             .padding(.horizontal, 20)
                                             .padding(.top, 14)
 
@@ -152,6 +154,8 @@ struct SettingsView: View {
                         Text(title)
                             .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundColor(.white.opacity(0.9))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                         Spacer()
                     }
                 }
@@ -212,10 +216,14 @@ struct SettingsView: View {
                     Text("Automatic")
                         .font(.system(size: 16, weight: isSelected ? .semibold : .regular, design: .rounded))
                         .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
                     Text(isSelected ? "Using \(resolvedLabel)" : "Pick based on your location")
                         .font(.system(size: 12, weight: .regular, design: .rounded))
                         .foregroundColor(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
 
                 Spacer()
@@ -251,21 +259,29 @@ struct SettingsView: View {
                     Text(method.rawValue)
                         .font(.system(size: 16, weight: isSelected ? .semibold : .regular, design: .rounded))
                         .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
                     // Show angles for reference
                     HStack(spacing: 12) {
                         Text("Fajr: \(formattedAngle(method.fajrAngle))°")
                             .font(.system(size: 12, weight: .regular, design: .monospaced))
                             .foregroundColor(.white.opacity(0.6))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
 
                         if method.ishaMinutesAfterMaghrib == nil {
                             Text("Isha: \(formattedAngle(method.ishaAngle))°")
                                 .font(.system(size: 12, weight: .regular, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.6))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         } else {
                             Text("Isha: \(method.ishaMinutesAfterMaghrib!) min")
                                 .font(.system(size: 12, weight: .regular, design: .monospaced))
                                 .foregroundColor(.white.opacity(0.6))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
                     }
                 }
@@ -310,10 +326,14 @@ struct SettingsView: View {
                     Text(method.rawValue)
                         .font(.system(size: 16, weight: isSelected ? .semibold : .regular, design: .rounded))
                         .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
                     Text("Shadow factor: \(Int(method.shadowFactor))x")
                         .font(.system(size: 12, weight: .regular, design: .monospaced))
                         .foregroundColor(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
 
                 Spacer()
@@ -343,9 +363,13 @@ struct SettingsView: View {
                     Text("Prayer Notifications")
                         .font(.system(size: 16, weight: .regular, design: .rounded))
                         .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     Text(viewModel.notificationAuthorizationLabel)
                         .font(.system(size: 12, weight: .regular, design: .rounded))
                         .foregroundColor(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
 
                 Spacer()
@@ -369,6 +393,8 @@ struct SettingsView: View {
                     Text("Open iOS Notification Settings")
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
@@ -377,28 +403,41 @@ struct SettingsView: View {
     }
 
     private var reminderLeadPickerRow: some View {
-        HStack {
+        HStack(spacing: 12) {
             Text("Upcoming Reminder")
                 .font(.system(size: 16, weight: .regular, design: .rounded))
                 .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            Picker(
-                "Upcoming Reminder",
-                selection: Binding(
-                    get: { viewModel.reminderLeadMinutes },
-                    set: { viewModel.setReminderLeadMinutes($0) }
-                )
-            ) {
+            Menu {
                 ForEach(viewModel.reminderLeadOptions, id: \.self) { minutes in
-                    Text("\(minutes) min before")
-                        .tag(minutes)
+                    Button {
+                        viewModel.setReminderLeadMinutes(minutes)
+                    } label: {
+                        if minutes == viewModel.reminderLeadMinutes {
+                            Label("\(minutes) min before", systemImage: "checkmark")
+                        } else {
+                            Text("\(minutes) min before")
+                        }
+                    }
                 }
+            } label: {
+                HStack(spacing: 4) {
+                    Text("\(viewModel.reminderLeadMinutes) min before")
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                }
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .pickerStyle(.menu)
             .disabled(!viewModel.notificationsEnabled)
-            .tint(Color(red: 0.85, green: 0.75, blue: 0.55))
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -415,10 +454,14 @@ struct SettingsView: View {
                     Text("Send Test Notification")
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     Spacer()
                     Text("5s")
                         .font(.system(size: 12, weight: .semibold, design: .monospaced))
                         .foregroundColor(.white.opacity(0.6))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 14)
@@ -439,9 +482,13 @@ struct SettingsView: View {
                 Text(prayer.rawValue)
                     .font(.system(size: 15, weight: .regular, design: .rounded))
                     .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(prayer.arabicName)
                     .font(.system(size: 12, weight: .regular, design: .serif))
                     .foregroundColor(.white.opacity(0.6))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
 
             Spacer()
@@ -451,6 +498,8 @@ struct SettingsView: View {
                     Text("At time")
                         .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundColor(.white.opacity(0.75))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     Toggle("", isOn: Binding(
                         get: { viewModel.isAtPrayerNotificationEnabled(prayer) },
                         set: { viewModel.setAtPrayerNotificationEnabled($0, for: prayer) }
@@ -464,6 +513,8 @@ struct SettingsView: View {
                     Text("Reminder")
                         .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundColor(.white.opacity(0.75))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     Toggle("", isOn: Binding(
                         get: { viewModel.isUpcomingReminderEnabled(prayer) },
                         set: { viewModel.setUpcomingReminderEnabled($0, for: prayer) }

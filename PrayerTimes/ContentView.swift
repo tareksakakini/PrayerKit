@@ -49,6 +49,8 @@ struct ContentView: View {
                                     Text("Open Settings")
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundColor(.white)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
                                         .padding(.horizontal, 16)
                                         .padding(.vertical, 8)
                                         .background(Color.orange)
@@ -120,6 +122,8 @@ struct ContentView: View {
                         .font(.system(size: 14))
                     Text(locationManager.cityName)
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     if !locationManager.countryName.isEmpty {
                         Text("•")
                             .font(.system(size: 14))
@@ -127,6 +131,8 @@ struct ContentView: View {
                         Text(locationManager.countryName)
                             .font(.system(size: 16, weight: .regular, design: .rounded))
                             .opacity(0.8)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
                 .foregroundColor(.white)
@@ -167,17 +173,23 @@ struct ContentView: View {
                 Text(String(format: "%.4f, %.4f", location.latitude, location.longitude))
                     .font(.system(size: 11, weight: .regular, design: .monospaced))
                     .foregroundColor(.white.opacity(0.5))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            
+
             // Dates
             VStack(spacing: 4) {
                 Text(viewModel.formattedDate)
                     .font(.system(size: 15, weight: .medium, design: .rounded))
                     .foregroundColor(.white.opacity(0.7))
-                
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
                 Text(viewModel.hijriDate)
                     .font(.system(size: 14, weight: .regular, design: .serif))
                     .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
         }
         .padding(.bottom, 8)
@@ -190,6 +202,8 @@ struct ContentView: View {
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .tracking(2)
                 .foregroundColor(.white.opacity(0.6))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             
             HStack(spacing: 16) {
                 // Prayer icon
@@ -274,6 +288,8 @@ struct ContentView: View {
                 Text("Today's Prayers")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 
                 Spacer()
                 
@@ -386,6 +402,8 @@ struct ContentView: View {
             Text("Calculating prayer times...")
                 .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundColor(.white.opacity(0.6))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .padding(40)
     }
