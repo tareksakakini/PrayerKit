@@ -141,7 +141,7 @@ struct ContentView: View {
                 
                 // Refresh location button
                 Button(action: {
-                    locationManager.requestLocation()
+                    viewModel.refreshLocation()
                 }) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 14, weight: .medium))

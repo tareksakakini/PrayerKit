@@ -16,11 +16,25 @@ class PrayerKitViewModel: ObservableObject {
     @Published var isLoading: Bool = true
     @Published private(set) var countdownTick: Date = Date()
     /// Manual override for the calculation method. `nil` means automatic —
-    /// the effective method is derived from the device's country.
+    /// the effective method is derived from the last successfully resolved
+    /// country code (see `resolvedAutomaticMethod`).
     @Published var manualCalculationMethod: CalculationMethod? = nil {
         didSet {
             guard !isHydratingCalculationPreferences, oldValue != manualCalculationMethod else { return }
             saveManualCalculationMethodPreference()
+            // Switching back to automatic: consume the cached country code
+            // immediately if we have one, otherwise arm the flag so the next
+            // geocode landing performs the resolution.
+            if manualCalculationMethod == nil {
+                if let code = locationManager.isoCountryCode {
+                    consumePendingAutomaticResolution(forCountryCode: code)
+                } else {
+                    pendingAutomaticMethodResolution = true
+                }
+            }
+            // Always propagate — the effective method changed even when the
+            // resolved automatic method itself is unchanged (e.g., manual
+            // .egyptian → automatic .northAmerica).
             saveCalculationMethod()
             if locationManager.location != nil {
                 recalculatePrayerTimes()
@@ -28,11 +42,25 @@ class PrayerKitViewModel: ObservableObject {
         }
     }
 
+    /// Last automatic method we resolved from a successful reverse-geocode.
+    /// Persisted in `UserDefaults.standard` so cold launches reuse it instead
+    /// of falling back to MWL while the new geocode is in flight (or fails).
+    @Published private var resolvedAutomaticMethod: CalculationMethod? = nil
+
+    /// True when we're allowed to overwrite `resolvedAutomaticMethod` from the
+    /// next country-code emission. Set on first-ever launch, user-initiated
+    /// location refresh, or switching from manual to automatic. Cleared as
+    /// soon as a country code lands so background geocode results don't
+    /// silently change the method.
+    private var pendingAutomaticMethodResolution = false
+
     /// Method actually used for calculations: manual override if set,
-    /// otherwise the country-recommended method (or MWL as a global fallback).
+    /// otherwise the last resolved automatic method (or MWL as a global
+    /// fallback used only before any geocode has ever succeeded).
     var calculationMethod: CalculationMethod {
         if let manual = manualCalculationMethod { return manual }
-        return CalculationMethod.recommended(forCountryCode: locationManager.isoCountryCode) ?? .muslimWorldLeague
+        if let resolved = resolvedAutomaticMethod { return resolved }
+        return .muslimWorldLeague
     }
 
     var isUsingAutomaticCalculationMethod: Bool { manualCalculationMethod == nil }
@@ -82,6 +110,7 @@ class PrayerKitViewModel: ObservableObject {
     /// Legacy key, kept for read-only migration on first launch after the upgrade.
     private let legacyCalculationMethodKey = "calculationMethod"
     private let manualCalculationMethodKey = "manualCalculationMethod"
+    private let resolvedAutomaticMethodKey = "resolvedAutomaticMethod"
     private let asrMethodKey = "asrMethod"
     private let notificationsEnabledKey = "notificationsEnabled"
     private let reminderLeadMinutesKey = "reminderLeadMinutes"
@@ -163,10 +192,23 @@ class PrayerKitViewModel: ObservableObject {
             manualCalculationMethod = nil
         }
 
+        // Load the last automatic resolution. If none has ever happened we
+        // arm `pendingAutomaticMethodResolution` so the first successful
+        // geocode is allowed to set it. Otherwise we leave it untouched —
+        // background geocode results (including failures) won't change it.
+        if let raw = defaults.string(forKey: resolvedAutomaticMethodKey),
+           let method = CalculationMethod.allCases.first(where: { $0.rawValue == raw }) {
+            resolvedAutomaticMethod = method
+        } else {
+            resolvedAutomaticMethod = nil
+            pendingAutomaticMethodResolution = true
+        }
+
         isHydratingCalculationPreferences = false
-        // Seed shared storage with the current effective method so the widget
-        // and notification extension don't read a stale value at first launch.
-        saveCalculationMethod()
+        // Intentionally not calling saveCalculationMethod() here: shared
+        // storage already holds the previous session's value, and writing
+        // the in-memory fallback (MWL) before geocode lands would clobber
+        // the correct value for the widget, watch, and notification extension.
 
         // Load Asr method
         if let savedAsr = defaults.string(forKey: asrMethodKey),
@@ -203,6 +245,41 @@ class PrayerKitViewModel: ObservableObject {
         WatchConnectivityManager.shared.syncToWatch()
         WidgetCenter.shared.reloadAllTimelines()
     }
+
+    /// Consumes a permitted resolution: clears the pending flag and updates
+    /// `resolvedAutomaticMethod` (with persistence) if the new value differs.
+    /// Does NOT touch shared storage / widget / watch / notifications — the
+    /// caller is responsible for that, so paths that change the effective
+    /// method for other reasons (e.g. manual → automatic) can still propagate
+    /// even when the resolved automatic method itself is unchanged.
+    private func consumePendingAutomaticResolution(forCountryCode code: String) {
+        pendingAutomaticMethodResolution = false
+        let newMethod = CalculationMethod.recommended(forCountryCode: code) ?? .muslimWorldLeague
+        guard newMethod != resolvedAutomaticMethod else { return }
+        resolvedAutomaticMethod = newMethod
+        UserDefaults.standard.set(newMethod.rawValue, forKey: resolvedAutomaticMethodKey)
+    }
+
+    /// Subscription path: consume the resolution and, if it changed the
+    /// effective calculation method, push the change through.
+    private func applyResolvedAutomaticMethod(forCountryCode code: String) {
+        let previousEffective = calculationMethod
+        consumePendingAutomaticResolution(forCountryCode: code)
+        guard calculationMethod != previousEffective else { return }
+        saveCalculationMethod()
+        if locationManager.location != nil {
+            recalculatePrayerTimes()
+        }
+    }
+
+    /// User-initiated location refresh. Re-arms automatic resolution so the
+    /// next successful geocode is allowed to update the calculation method.
+    func refreshLocation() {
+        if isUsingAutomaticCalculationMethod {
+            pendingAutomaticMethodResolution = true
+        }
+        locationManager.requestLocation()
+    }
     
     private func setupBindings() {
         // React to location changes
@@ -213,17 +290,17 @@ class PrayerKitViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // In automatic mode, a country change can change the effective
-        // calculation method. Recompute + re-mirror to shared storage.
+        // Country-code landings only update the automatic method when we've
+        // explicitly opened the door for it (first run, user refresh, or
+        // toggling back to automatic). Nil values are ignored so a failed
+        // background geocode can never overwrite a previously-resolved method.
         locationManager.$isoCountryCode
+            .compactMap { $0 }
             .removeDuplicates()
-            .dropFirst()
-            .sink { [weak self] _ in
+            .sink { [weak self] code in
                 guard let self, self.isUsingAutomaticCalculationMethod else { return }
-                self.saveCalculationMethod()
-                if self.locationManager.location != nil {
-                    self.recalculatePrayerTimes()
-                }
+                guard self.pendingAutomaticMethodResolution else { return }
+                self.applyResolvedAutomaticMethod(forCountryCode: code)
             }
             .store(in: &cancellables)
 
@@ -448,15 +525,23 @@ class PrayerKitViewModel: ObservableObject {
         reminderLeadMinutes = sanitizedReminderLead(minutes)
     }
     
-    func sendDebugNotification() {
+    #if DEBUG
+    func sendDebugPrayerNotification(prayerName: PrayerName, isReminder: Bool) {
+        let lead = reminderLeadMinutes
         NotificationManager.shared.requestAuthorization { [weak self] granted in
             DispatchQueue.main.async {
                 self?.refreshNotificationAuthorizationStatus()
                 guard granted else { return }
-                NotificationManager.shared.scheduleDebugNotification(after: 5)
+                NotificationManager.shared.scheduleDebugPrayerNotification(
+                    prayerName: prayerName,
+                    isReminder: isReminder,
+                    reminderLeadMinutes: lead,
+                    after: 1
+                )
             }
         }
     }
+    #endif
     
     private func loadNotificationPreferences() {
         let defaults = UserDefaults.standard

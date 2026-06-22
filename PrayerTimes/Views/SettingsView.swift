@@ -15,6 +15,17 @@ struct SettingsView: View {
     @State private var expandedSections: Set<SettingsSection> = []
     @State private var showCalculationInfo = false
 
+    #if DEBUG
+    @State private var debugTestPrayer: PrayerName = .fajr
+    @State private var debugTestKind: DebugTestKind = .atTime
+
+    private enum DebugTestKind: String, CaseIterable, Identifiable {
+        case atTime = "At time"
+        case reminder = "Reminder"
+        var id: String { rawValue }
+    }
+    #endif
+
     private enum SettingsSection: Hashable {
         case notifications
         case calculationMethod
@@ -36,10 +47,12 @@ struct SettingsView: View {
                                     .background(Color.white.opacity(0.1))
                                     .padding(.leading, 20)
                                 reminderLeadPickerRow
+                                #if DEBUG
                                 Divider()
                                     .background(Color.white.opacity(0.1))
                                     .padding(.leading, 20)
                                 debugNotificationRow
+                                #endif
 
                                 if viewModel.notificationsEnabled {
                                     Divider()
@@ -443,38 +456,113 @@ struct SettingsView: View {
         .padding(.vertical, 16)
     }
 
+    #if DEBUG
     private var debugNotificationRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button {
-                viewModel.sendDebugNotification()
-            } label: {
-                HStack {
-                    Image(systemName: "bell.badge")
-                        .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
-                    Text("Send Test Notification")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    Spacer()
-                    Text("5s")
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.6))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "bell.badge")
+                    .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                Text("Send Test Notification")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Spacer()
             }
-            .buttonStyle(PlainButtonStyle())
+            .padding(.horizontal, 20)
+            .padding(.top, 14)
 
-            Text("Use this to quickly verify notification permissions and delivery.")
+            HStack(spacing: 10) {
+                debugMenu(
+                    selectionLabel: debugTestPrayer.rawValue,
+                    options: PrayerName.allCases.map { ($0.rawValue, $0 == debugTestPrayer) },
+                    onSelect: { label in
+                        if let match = PrayerName.allCases.first(where: { $0.rawValue == label }) {
+                            debugTestPrayer = match
+                        }
+                    }
+                )
+
+                debugMenu(
+                    selectionLabel: debugTestKind.rawValue,
+                    options: DebugTestKind.allCases.map { ($0.rawValue, $0 == debugTestKind) },
+                    onSelect: { label in
+                        if let match = DebugTestKind.allCases.first(where: { $0.rawValue == label }) {
+                            debugTestKind = match
+                        }
+                    }
+                )
+
+                Spacer()
+
+                Button {
+                    viewModel.sendDebugPrayerNotification(
+                        prayerName: debugTestPrayer,
+                        isReminder: debugTestKind == .reminder
+                    )
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Send")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        Text("1s")
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .opacity(0.75)
+                    }
+                    .foregroundColor(Color(red: 0.07, green: 0.13, blue: 0.26))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(red: 0.85, green: 0.75, blue: 0.55))
+                    .cornerRadius(8)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 20)
+
+            Text("Debug only — fires the chosen notification 5 seconds from now. Reminder uses the lead time set above.")
                 .font(.system(size: 12, weight: .regular, design: .rounded))
                 .foregroundColor(.white.opacity(0.6))
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
         }
     }
+
+    private func debugMenu(
+        selectionLabel: String,
+        options: [(label: String, selected: Bool)],
+        onSelect: @escaping (String) -> Void
+    ) -> some View {
+        Menu {
+            ForEach(options, id: \.label) { option in
+                Button {
+                    onSelect(option.label)
+                } label: {
+                    if option.selected {
+                        Label(option.label, systemImage: "checkmark")
+                    } else {
+                        Text(option.label)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(selectionLabel)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Color(red: 0.85, green: 0.75, blue: 0.55))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.white.opacity(0.08))
+            .cornerRadius(8)
+        }
+    }
+    #endif
 
     private func prayerNotificationRow(prayer: PrayerName) -> some View {
         HStack {

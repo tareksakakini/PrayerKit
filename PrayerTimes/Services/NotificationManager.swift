@@ -193,6 +193,9 @@ final class NotificationManager: NSObject {
         }
     }
 
+    #if DEBUG
+    /// Fires a small banner used by AppDelegate to confirm a silent-push
+    /// wake-up triggered `refreshFromPersistedState`. Compiled out of Release.
     func scheduleDebugNotification(after seconds: TimeInterval = 5) {
         authorizationStatus { [weak self] status in
             guard let self else { return }
@@ -209,18 +212,57 @@ final class NotificationManager: NSObject {
                 repeats: false
             )
 
-            // Use a distinct identifier so prayer-rescheduling cleanup
-             // (which removes everything with the prayer prefix) doesn't sweep this away.
-             let identifier = "prayerkit_debug_test"
-            center.removePendingNotificationRequests(withIdentifiers: [identifier])
+            let identifier = "prayerkit_debug_test"
+            self.center.removePendingNotificationRequests(withIdentifiers: [identifier])
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-            center.add(request) { error in
+            self.center.add(request) { error in
                 if let error {
                     print("⚠️ NotificationManager: Failed to schedule debug notification - \(error.localizedDescription)")
                 }
             }
         }
     }
+
+    /// Fires a real prayer-style notification (bilingual title + body) a few
+    /// seconds from now, so you can verify how the live push will look without
+    /// waiting for an actual prayer time. Compiled out of Release builds — does
+    /// not ship to the App Store.
+    func scheduleDebugPrayerNotification(
+        prayerName: PrayerName,
+        isReminder: Bool,
+        reminderLeadMinutes: Int,
+        after seconds: TimeInterval = 1
+    ) {
+        authorizationStatus { [weak self] status in
+            guard let self else { return }
+            let canSchedule = status == .authorized || status == .provisional || status == .ephemeral
+            guard canSchedule else { return }
+
+            let offsetMinutes = isReminder ? -abs(reminderLeadMinutes) : 0
+
+            let content = UNMutableNotificationContent()
+            content.title = prayerName.rawValue
+            content.body = self.notificationBody(for: prayerName, offsetMinutes: offsetMinutes)
+            content.sound = .default
+
+            let trigger = UNTimeIntervalNotificationTrigger(
+                timeInterval: max(1, seconds),
+                repeats: false
+            )
+
+            // Distinct identifier so prayer-rescheduling cleanup
+            // (which removes everything with the prayer prefix) doesn't sweep this away.
+            let identifier = "prayerkit_debug_test"
+            self.center.removePendingNotificationRequests(withIdentifiers: [identifier])
+            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+            self.center.add(request) { error in
+                if let error {
+                    print("⚠️ NotificationManager: Failed to schedule debug notification - \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    #endif
 
     private func removePendingPrayerRequests(completion: (() -> Void)? = nil) {
         center.getPendingNotificationRequests { [weak self] requests in
@@ -285,13 +327,49 @@ final class NotificationManager: NSObject {
     }
 
     private func notificationBody(for prayerName: PrayerName, offsetMinutes: Int) -> String {
+        let english: String
         if offsetMinutes == 0 {
-            return "It is time for \(prayerName.rawValue)."
+            english = "It is time for \(prayerName.rawValue)."
+        } else if offsetMinutes < 0 {
+            english = "\(prayerName.rawValue) starts in \(abs(offsetMinutes)) minutes."
+        } else {
+            english = "\(prayerName.rawValue) started \(offsetMinutes) minutes ago."
+        }
+        let arabic = arabicNotificationBody(for: prayerName, offsetMinutes: offsetMinutes)
+        // U+2067/U+2069 (RLI/PDI) wrap the Arabic in an RTL isolate: the line
+        // still left-aligns under the English (outer paragraph stays LTR), but
+        // the period resolves at the END of the Arabic sentence (visually left)
+        // instead of jumping to the line's right edge.
+        return "\(english)\n\u{2067}\(arabic)\u{2069}"
+    }
+
+    private func arabicNotificationBody(for prayerName: PrayerName, offsetMinutes: Int) -> String {
+        let isSunrise = prayerName == .sunrise
+        if offsetMinutes == 0 {
+            return isSunrise
+                ? "حان وقت الشروق."
+                : "حان وقت صلاة \(prayerName.arabicName)."
         }
         if offsetMinutes < 0 {
-            return "\(prayerName.rawValue) starts in \(abs(offsetMinutes)) minutes."
+            let phrase = arabicMinutesPhrase(abs(offsetMinutes))
+            return isSunrise
+                ? "يبدأ الشروق بعد \(phrase)."
+                : "تبدأ صلاة \(prayerName.arabicName) بعد \(phrase)."
         }
-        return "\(prayerName.rawValue) started \(offsetMinutes) minutes ago."
+        let phrase = arabicMinutesPhrase(offsetMinutes)
+        return isSunrise
+            ? "بدأ الشروق منذ \(phrase)."
+            : "بدأت صلاة \(prayerName.arabicName) منذ \(phrase)."
+    }
+
+    private func arabicMinutesPhrase(_ count: Int) -> String {
+        let n = Swift.abs(count)
+        switch n {
+        case 1: return "دقيقة واحدة"
+        case 2: return "دقيقتان"
+        case 3...10: return "\(n) دقائق"
+        default: return "\(n) دقيقة"
+        }
     }
 }
 
