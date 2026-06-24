@@ -125,6 +125,17 @@ struct SettingsView: View {
             } message: {
                 Text("Different calculation methods use different angles for Fajr and Isha prayers. Choose the method used by your local mosque or Islamic center.\n\nISNA (Islamic Society of North America) is commonly used in North America with 15° angles for both Fajr and Isha.\n\nNotifications are local on-device alerts based on your current location and chosen method.")
             }
+            .alert("Enable Notifications in Settings", isPresented: $viewModel.showSystemSettingsAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Open Settings") {
+                    viewModel.markPendingEnableAfterSettingsReturn()
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            } message: {
+                Text("Notifications for Prayer Kit are turned off in iOS Settings. Open Settings to enable them?")
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {

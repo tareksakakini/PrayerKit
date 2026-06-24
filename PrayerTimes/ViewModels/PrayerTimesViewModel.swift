@@ -10,6 +10,7 @@ import CoreLocation
 import Combine
 import UserNotifications
 import WidgetKit
+import OneSignalFramework
 
 class PrayerKitViewModel: ObservableObject {
     @Published var dailyPrayers: DailyPrayers?
@@ -93,6 +94,8 @@ class PrayerKitViewModel: ObservableObject {
         }
     }
     @Published private(set) var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
+    @Published var showSystemSettingsAlert: Bool = false
+    private var pendingEnableAfterSettingsReturn = false
     
     private var locationManager: LocationManager
     private var cancellables = Set<AnyCancellable>()
@@ -518,7 +521,50 @@ class PrayerKitViewModel: ObservableObject {
     }
     
     func setNotificationsEnabled(_ enabled: Bool) {
+        if enabled, notificationAuthorizationStatus == .denied {
+            // iOS won't re-prompt after a denial — the user has to flip it on
+            // in the system Settings app. Surface that path instead of letting
+            // the toggle flash on then snap back.
+            showSystemSettingsAlert = true
+            return
+        }
         notificationsEnabled = enabled
+    }
+
+    /// Called when the user taps "Open Settings" in the denial alert. Records
+    /// the intent so that when the app returns to the foreground with iOS
+    /// authorization granted, the in-app toggle flips on automatically.
+    func markPendingEnableAfterSettingsReturn() {
+        pendingEnableAfterSettingsReturn = true
+    }
+
+    /// Hook called from the view when the scene becomes active. Re-checks
+    /// iOS notification authorization and fulfills any pending enable intent
+    /// recorded before the user was sent to system Settings.
+    func handleSceneBecameActive() {
+        refreshCountdown()
+        NotificationManager.shared.authorizationStatus { [weak self] status in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.notificationAuthorizationStatus = status
+                if self.pendingEnableAfterSettingsReturn, status == .authorized {
+                    self.pendingEnableAfterSettingsReturn = false
+                    self.setNotificationsEnabled(true)
+                }
+            }
+        }
+    }
+
+    /// On the very first launch, prompt for notification permission and let
+    /// the result drive the in-app toggle. Reuses the standard enable path
+    /// so OneSignal opt-in and scheduling happen the same way as a manual
+    /// toggle from Settings.
+    func promptForNotificationsIfNeeded() {
+        let key = "hasPromptedForNotificationsOnFirstLaunch"
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: key) else { return }
+        defaults.set(true, forKey: key)
+        setNotificationsEnabled(true)
     }
     
     func setReminderLeadMinutes(_ minutes: Int) {
@@ -663,9 +709,11 @@ class PrayerKitViewModel: ObservableObject {
     
     private func updateSelectionsAfterAuthResult(granted: Bool) {
         if granted {
+            OneSignal.User.pushSubscription.optIn()
             ensureSelectionsAvailableWhenTurningNotificationsOn()
             rescheduleNotificationsForCurrentState()
         } else {
+            OneSignal.User.pushSubscription.optOut()
             disableNotificationsAndClearSelections()
         }
     }
@@ -676,6 +724,7 @@ class PrayerKitViewModel: ObservableObject {
     }
     
     private func handleNotificationsDisabled() {
+        OneSignal.User.pushSubscription.optOut()
         NotificationManager.shared.clearScheduledPrayerNotifications()
         refreshNotificationAuthorizationStatus()
     }

@@ -85,10 +85,11 @@ struct ContentView: View {
         }
         .onAppear {
             locationManager.requestLocationPermission()
+            viewModel.promptForNotificationsIfNeeded()
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
-                viewModel.refreshCountdown()
+                viewModel.handleSceneBecameActive()
             }
         }
     }
